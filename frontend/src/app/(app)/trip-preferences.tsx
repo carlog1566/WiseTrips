@@ -16,7 +16,7 @@ import {
   colorPallet,
   radious,
 } from "@/constants/tokens";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { SymbolView } from "expo-symbols";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
@@ -48,53 +48,73 @@ type TransportationMethod = (typeof transportationOptions)[number]["value"];
 
 const interestOptions = [
   {
-    value: "relaxed",
-    label: "Relaxed",
-    icon: { ios: "chair.lounge", android: "chair" },
-  },
-  {
-    value: "foodFocused",
-    label: "Food-focused",
+    value: "food",
+    label: "Food",
     icon: { ios: "fork.knife", android: "restaurant" },
   },
   {
-    value: "touristFocused",
-    label: "Tourist-\nfocused",
-    icon: { ios: "camera", android: "photo_camera" },
+    value: "nature",
+    label: "Nature",
+    icon: { ios: "leaf", android: "park" },
+  },
+  {
+    value: "shopping",
+    label: "Shopping",
+    icon: { ios: "bag", android: "shopping_bag" },
+  },
+  {
+    value: "museums",
+    label: "Museums",
+    icon: { ios: "building.columns", android: "museum" },
+  },
+  {
+    value: "entertainment",
+    label: "Entertainment",
+    icon: { ios: "ticket", android: "confirmation_number" },
   },
 ] as const;
 
 type Interest = (typeof interestOptions)[number]["value"];
 
-type DestinationField = {
-  id: number;
-  value: string;
-};
+const paceOptions = [
+  {
+    value: "relaxed",
+    label: "Relaxed",
+    icon: { ios: "chair.lounge", android: "chair" },
+  },
+  {
+    value: "moderate",
+    label: "Moderate",
+    icon: { ios: "figure.walk", android: "directions_walk" },
+  },
+  {
+    value: "packed",
+    label: "Packed",
+    icon: { ios: "hare", android: "directions_run" },
+  },
+] as const;
 
-type TripPreferences = {
-  destinations: string[];
-  startLocation: string;
-  startDate: Date;
-  endDate: Date;
-  startTime: Date;
-  endTime: Date;
-  budget: string;
-  transportationMethod: TransportationMethod;
+type Pace = (typeof paceOptions)[number]["value"];
+
+type TripPreferencesCreate = {
+  destination: string;
+  trip_date: string;
+  starting_location: string;
+  start_time: string;
+  end_time: string;
+  budget: number;
+  transportation_mode: TransportationMethod;
   interests: Interest[];
+  pace: Pace;
 };
 
 export default function HomeScreen() {
   const theme = useTheme();
 
-  const [destinations, setDestinations] = useState<DestinationField[]>([
-    { id: 0, value: "" },
-  ]);
-  const nextDestinationId = useRef(1);
+  const [destination, setDestination] = useState("");
   const [startLocation, setStartLocation] = useState("");
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [tripDate, setTripDate] = useState(new Date());
+  const [showTripDatePicker, setShowTripDatePicker] = useState(false);
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
@@ -103,52 +123,55 @@ export default function HomeScreen() {
   const [transportationMethod, setTransportationMethod] =
     useState<TransportationMethod>("walking");
   const [interests, setInterests] = useState<Interest[]>([]);
+  const [pace, setPace] = useState<Pace>("relaxed");
   const [error, setError] = useState("");
 
   const onPress = () => {
     setError("");
     const errorMessage = "Please fill in all fields correctly.";
 
-    const startsAt = new Date(startDate);
+    const startsAt = new Date(tripDate);
     startsAt.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-    const endsAt = new Date(endDate);
+    const endsAt = new Date(tripDate);
     endsAt.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
+    const parsedBudget = Number(budget);
 
     if (
       !startLocation.trim() ||
-      destinations.length === 0 ||
-      destinations.some((destination) => !destination.value.trim()) ||
+      !destination.trim() ||
       !transportationMethod ||
       !Number.isFinite(startsAt.getTime()) ||
       !Number.isFinite(endsAt.getTime()) ||
       startsAt.getTime() <= Date.now() ||
       endsAt.getTime() <= startsAt.getTime() ||
-      !budget ||
-      !Number.isFinite(Number(budget))
+      !budget.trim() ||
+      !Number.isFinite(parsedBudget) ||
+      parsedBudget < 0 ||
+      interests.length === 0
     ) {
       setError(errorMessage);
       return;
     }
-    
 
-    const preferences: TripPreferences = {
-      destinations: destinations
-        .map((destination) => destination.value.trim())
-        .filter((destination) => destination.length > 0),
-      startLocation: startLocation.trim(),
-      startDate,
-      endDate,
-      startTime,
-      endTime,
-      budget,
-      transportationMethod,
+    const preferences: TripPreferencesCreate = {
+      destination: destination.trim(),
+      trip_date: `${tripDate.getFullYear()}-${String(
+        tripDate.getMonth() + 1,
+      ).padStart(2, "0")}-${String(tripDate.getDate()).padStart(2, "0")}`,
+      starting_location: startLocation.trim(),
+      start_time: startTime.toTimeString().slice(0, 8),
+      end_time: endTime.toTimeString().slice(0, 8),
+      budget: parsedBudget,
+      transportation_mode: transportationMethod,
       interests,
+      pace,
     };
 
     console.log(preferences);
   };
 
   const [btnScale] = useState(() => new Animated.Value(1));
+
   const pressIn = () =>
     Animated.spring(btnScale, {
       toValue: 0.97,
@@ -156,6 +179,7 @@ export default function HomeScreen() {
       speed: 50,
       bounciness: 4,
     }).start();
+
   const pressOut = () =>
     Animated.spring(btnScale, {
       toValue: 1,
@@ -175,47 +199,14 @@ export default function HomeScreen() {
     >
       <View style={styles.section}>
         <Text style={styles.label}>Where to?</Text>
-        {destinations.map((destination, index) => (
-          <CustomTextInput
-            key={destination.id}
-            icon={{ ios: "magnifyingglass", android: "search" }}
-            value={destination.value}
-            autoCapitalize="words"
-            autoCorrect={true}
-            onChangeText={(text) =>
-              setDestinations((current) =>
-                current.map((field) =>
-                  field.id === destination.id
-                    ? { ...field, value: text }
-                    : field,
-                ),
-              )
-            }
-            onRemove={
-              index > 0
-                ? () =>
-                    setDestinations((current) =>
-                      current.filter((field) => field.id !== destination.id),
-                    )
-                : undefined
-            }
-            placeholder={
-              index === 0 ? "Enter destination" : "Enter another destination"
-            }
-          />
-        ))}
-        <Pressable
-          style={({ pressed }) => [
-            styles.textButtonContainer,
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={() => {
-            const id = nextDestinationId.current++;
-            setDestinations((current) => [...current, { id, value: "" }]);
-          }}
-        >
-          <Text style={styles.text}>+ Add More</Text>
-        </Pressable>
+        <CustomTextInput
+          icon={{ ios: "magnifyingglass", android: "search" }}
+          value={destination}
+          autoCapitalize="words"
+          autoCorrect={true}
+          onChangeText={setDestination}
+          placeholder="Enter city or region"
+        />
       </View>
 
       <View style={styles.section}>
@@ -230,125 +221,64 @@ export default function HomeScreen() {
         />
       </View>
 
-      <View style={styles.dateTimeSection}>
-        <View style={styles.dateTimeColumn}>
-          <Text style={styles.label}>Start Date</Text>
-
-          <Pressable
-            onPress={() => {
-              Keyboard.dismiss();
-              setShowStartPicker(!showStartPicker);
-              setShowEndPicker(false);
-              setShowStartTimePicker(false);
-              setShowEndTimePicker(false);
-            }}
-            style={[
-              styles.dateTimeContainer,
-              showStartPicker && {
-                borderColor: theme.primary,
-                backgroundColor: theme.primaryBackground,
-              },
-            ]}
-          >
-            <SymbolView
-              name={{ ios: "calendar", android: "calendar_month" }}
-              size={20}
-              tintColor={colorPallet.muted}
-            />
-            <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
-              {startDate.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.dateTimeColumn}>
-          <Text style={styles.label}>End Date</Text>
-
-          <Pressable
-            onPress={() => {
-              Keyboard.dismiss();
-              setShowEndPicker(!showEndPicker);
-              setShowStartPicker(false);
-              setShowStartTimePicker(false);
-              setShowEndTimePicker(false);
-            }}
-            style={[
-              styles.dateTimeContainer,
-              showEndPicker && {
-                borderColor: theme.primary,
-                backgroundColor: theme.primaryBackground,
-              },
-            ]}
-          >
-            <SymbolView
-              name={{ ios: "calendar", android: "calendar_month" }}
-              size={20}
-              tintColor={colorPallet.muted}
-            />
-            <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
-              {endDate.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Text>
-          </Pressable>
-        </View>
+      <View style={styles.section}>
+        <Text style={styles.label}>Trip Date</Text>
+        <Pressable
+          onPress={() => {
+            Keyboard.dismiss();
+            setShowTripDatePicker(!showTripDatePicker);
+            setShowStartTimePicker(false);
+            setShowEndTimePicker(false);
+          }}
+          style={[
+            styles.dateTimeContainer,
+            showTripDatePicker && {
+              borderColor: theme.primary,
+              backgroundColor: theme.primaryBackground,
+            },
+          ]}
+        >
+          <SymbolView
+            name={{ ios: "calendar", android: "calendar_month" }}
+            size={20}
+            tintColor={colorPallet.muted}
+          />
+          <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
+            {tripDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </Text>
+        </Pressable>
       </View>
 
-      {showStartPicker && (
+      {showTripDatePicker && (
         <DateTimePicker
-          value={startDate}
+          value={tripDate}
           mode="date"
           display={Platform.OS === "ios" ? "inline" : "default"}
           presentation="dialog"
-          onDismiss={() => setShowStartPicker(false)}
+          onDismiss={() => setShowTripDatePicker(false)}
           accentColor={theme.primary}
           themeVariant="light"
           minimumDate={new Date()}
           onValueChange={(_, date) => {
-            setStartDate(date);
-
-            if (date > endDate) {
-              setEndDate(date);
-            }
-
-            setShowStartPicker(false);
+            setTripDate(date);
+            setShowTripDatePicker(false);
           }}
         />
       )}
 
-      {showEndPicker && (
-        <DateTimePicker
-          value={endDate}
-          mode="date"
-          display={Platform.OS === "ios" ? "inline" : "default"}
-          presentation="dialog"
-          onDismiss={() => setShowEndPicker(false)}
-          accentColor={theme.primary}
-          themeVariant="light"
-          minimumDate={startDate}
-          onValueChange={(_, date) => {
-            setEndDate(date);
-            setShowEndPicker(false);
-          }}
-        />
-      )}
       <View style={styles.dateTimeSection}>
         <View style={styles.dateTimeColumn}>
           <Text style={styles.label}>Start Time</Text>
-
           <Pressable
             onPress={() => {
               Keyboard.dismiss();
               setShowStartTimePicker(!showStartTimePicker);
               setShowEndTimePicker(false);
-              setShowStartPicker(false);
-              setShowEndPicker(false);
+              setShowTripDatePicker(false);
             }}
             style={[
               styles.dateTimeContainer,
@@ -374,15 +304,13 @@ export default function HomeScreen() {
 
         <View style={styles.dateTimeColumn}>
           <Text style={styles.label}>End Time</Text>
-
           <Pressable
             accessibilityLabel="End Time"
             onPress={() => {
               Keyboard.dismiss();
               setShowEndTimePicker(!showEndTimePicker);
               setShowStartTimePicker(false);
-              setShowStartPicker(false);
-              setShowEndPicker(false);
+              setShowTripDatePicker(false);
             }}
             style={[
               styles.dateTimeContainer,
@@ -488,7 +416,6 @@ export default function HomeScreen() {
           {transportationOptions.map((option) => {
             const selected = transportationMethod === option.value;
             const color = selected ? theme.primary : theme.text;
-
             return (
               <Pressable
                 key={option.value}
@@ -514,11 +441,10 @@ export default function HomeScreen() {
 
       <View style={styles.section}>
         <Text style={styles.label}>Interests</Text>
-        <View style={styles.transportationOptions}>
+        <View style={styles.interestOptions}>
           {interestOptions.map((option) => {
             const selected = interests.includes(option.value);
             const color = selected ? theme.primary : theme.text;
-
             return (
               <Pressable
                 key={option.value}
@@ -529,6 +455,35 @@ export default function HomeScreen() {
                       : [...current, option.value],
                   )
                 }
+                style={({ pressed }) => [
+                  styles.interestOption,
+                  selected && {
+                    borderColor: theme.primary,
+                    backgroundColor: "#D9EDFF",
+                  },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <SymbolView name={option.icon} size={28} tintColor={color} />
+                <Text style={[styles.transportationLabel, { color }]}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>Pace</Text>
+        <View style={styles.transportationOptions}>
+          {paceOptions.map((option) => {
+            const selected = pace === option.value;
+            const color = selected ? theme.primary : theme.text;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => setPace(option.value)}
                 style={({ pressed }) => [
                   styles.transportationOption,
                   selected && {
@@ -547,11 +502,13 @@ export default function HomeScreen() {
           })}
         </View>
       </View>
+
       {error ? (
         <Text accessibilityRole="alert" style={styles.errorText}>
           {error}
         </Text>
       ) : null}
+
       <Animated.View style={{ transform: [{ scale: btnScale }] }}>
         <Pressable
           accessibilityRole="button"
@@ -634,6 +591,28 @@ const styles = StyleSheet.create({
     borderRadius: radious.md,
     backgroundColor: "#F5F5F7",
   },
+  // Five interests don't fit in one row, so they wrap (3 per row)
+  interestOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  interestOption: {
+    flexGrow: 1,
+    flexBasis: "30%",
+    minWidth: 0,
+    minHeight: 104,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xxs,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: "transparent",
+    borderRadius: radious.md,
+    backgroundColor: "#F5F5F7",
+  },
   transportationLabel: {
     fontSize: fontSizes.caption,
     fontWeight: fontWeights.medium,
@@ -647,9 +626,6 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: fontSizes.body,
-  },
-  textButtonContainer: {
-    alignItems: "center",
   },
   doneButton: {
     alignSelf: "flex-end",
