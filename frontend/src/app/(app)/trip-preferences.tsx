@@ -145,7 +145,6 @@ export default function HomeScreen() {
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
-      automaticallyAdjustKeyboardInsets
     >
       <View style={styles.section}>
         <Text style={styles.label}>Where to?</Text>
@@ -159,7 +158,9 @@ export default function HomeScreen() {
             onChangeText={(text) =>
               setDestinations((current) =>
                 current.map((field) =>
-                  field.id === destination.id ? { ...field, value: text } : field,
+                  field.id === destination.id
+                    ? { ...field, value: text }
+                    : field,
                 ),
               )
             }
@@ -206,7 +207,14 @@ export default function HomeScreen() {
         <View style={styles.dateTimeColumn}>
           <Text style={styles.label}>Start Date</Text>
 
-          <View
+          <Pressable
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowStartPicker(!showStartPicker);
+              setShowEndPicker(false);
+              setShowStartTimePicker(false);
+              setShowEndTimePicker(false);
+            }}
             style={[
               styles.dateTimeContainer,
               showStartPicker && {
@@ -220,30 +228,27 @@ export default function HomeScreen() {
               size={20}
               tintColor={colorPallet.muted}
             />
-            <Pressable
-              onPress={() => {
-                Keyboard.dismiss();
-                setShowStartPicker(!showStartPicker);
-                setShowEndPicker(false);
-                setShowStartTimePicker(false);
-                setShowEndTimePicker(false);
-              }}
-            >
-              <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
-                {startDate.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </Text>
-            </Pressable>
-          </View>
+            <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
+              {startDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </Text>
+          </Pressable>
         </View>
 
         <View style={styles.dateTimeColumn}>
           <Text style={styles.label}>End Date</Text>
 
-          <View
+          <Pressable
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowEndPicker(!showEndPicker);
+              setShowStartPicker(false);
+              setShowStartTimePicker(false);
+              setShowEndTimePicker(false);
+            }}
             style={[
               styles.dateTimeContainer,
               showEndPicker && {
@@ -257,24 +262,14 @@ export default function HomeScreen() {
               size={20}
               tintColor={colorPallet.muted}
             />
-            <Pressable
-              onPress={() => {
-                Keyboard.dismiss();
-                setShowEndPicker(!showEndPicker);
-                setShowStartPicker(false);
-                setShowStartTimePicker(false);
-                setShowEndTimePicker(false);
-              }}
-            >
-              <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
-                {endDate.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </Text>
-            </Pressable>
-          </View>
+            <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
+              {endDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </Text>
+          </Pressable>
         </View>
       </View>
 
@@ -320,7 +315,14 @@ export default function HomeScreen() {
         <View style={styles.dateTimeColumn}>
           <Text style={styles.label}>Start Time</Text>
 
-          <View
+          <Pressable
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowStartTimePicker(!showStartTimePicker);
+              setShowEndTimePicker(false);
+              setShowStartPicker(false);
+              setShowEndPicker(false);
+            }}
             style={[
               styles.dateTimeContainer,
               showStartTimePicker && {
@@ -334,29 +336,27 @@ export default function HomeScreen() {
               size={20}
               tintColor={colorPallet.muted}
             />
-            <Pressable
-              onPress={() => {
-                Keyboard.dismiss();
-                setShowStartTimePicker(!showStartTimePicker);
-                setShowEndTimePicker(false);
-                setShowStartPicker(false);
-                setShowEndPicker(false);
-              }}
-            >
-              <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
-                {startTime.toLocaleTimeString("en-US", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </Text>
-            </Pressable>
-          </View>
+            <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
+              {startTime.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </Text>
+          </Pressable>
         </View>
 
         <View style={styles.dateTimeColumn}>
           <Text style={styles.label}>End Time</Text>
 
-          <View
+          <Pressable
+            accessibilityLabel="End Time"
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowEndTimePicker(!showEndTimePicker);
+              setShowStartTimePicker(false);
+              setShowStartPicker(false);
+              setShowEndPicker(false);
+            }}
             style={[
               styles.dateTimeContainer,
               showEndTimePicker && {
@@ -370,23 +370,13 @@ export default function HomeScreen() {
               size={20}
               tintColor={colorPallet.muted}
             />
-            <Pressable
-              onPress={() => {
-                Keyboard.dismiss();
-                setShowEndTimePicker(!showEndTimePicker);
-                setShowStartTimePicker(false);
-                setShowStartPicker(false);
-                setShowEndPicker(false);
-              }}
-            >
-              <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
-                {endTime.toLocaleTimeString("en-US", {
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </Text>
-            </Pressable>
-          </View>
+            <Text style={{ fontSize: fontSizes.body, color: theme.text }}>
+              {endTime.toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </Text>
+          </Pressable>
         </View>
       </View>
 
