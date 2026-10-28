@@ -103,13 +103,39 @@ export default function HomeScreen() {
   const [transportationMethod, setTransportationMethod] =
     useState<TransportationMethod>("walking");
   const [interests, setInterests] = useState<Interest[]>([]);
+  const [error, setError] = useState("");
 
   const onPress = () => {
+    setError("");
+    const errorMessage = "Please fill in all fields correctly.";
+
+    const startsAt = new Date(startDate);
+    startsAt.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
+    const endsAt = new Date(endDate);
+    endsAt.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
+
+    if (
+      !startLocation.trim() ||
+      destinations.length === 0 ||
+      destinations.some((destination) => !destination.value.trim()) ||
+      !transportationMethod ||
+      !Number.isFinite(startsAt.getTime()) ||
+      !Number.isFinite(endsAt.getTime()) ||
+      startsAt.getTime() <= Date.now() ||
+      endsAt.getTime() <= startsAt.getTime() ||
+      !budget ||
+      !Number.isFinite(Number(budget))
+    ) {
+      setError(errorMessage);
+      return;
+    }
+    
+
     const preferences: TripPreferences = {
       destinations: destinations
         .map((destination) => destination.value.trim())
         .filter((destination) => destination.length > 0),
-      startLocation,
+      startLocation: startLocation.trim(),
       startDate,
       endDate,
       startTime,
@@ -145,6 +171,7 @@ export default function HomeScreen() {
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
     >
       <View style={styles.section}>
         <Text style={styles.label}>Where to?</Text>
@@ -520,6 +547,11 @@ export default function HomeScreen() {
           })}
         </View>
       </View>
+      {error ? (
+        <Text accessibilityRole="alert" style={styles.errorText}>
+          {error}
+        </Text>
+      ) : null}
       <Animated.View style={{ transform: [{ scale: btnScale }] }}>
         <Pressable
           accessibilityRole="button"
@@ -540,6 +572,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  errorText: {
+    color: "#B42318",
+    fontSize: fontSizes.label,
+  },
   screen: {
     flex: 1,
     backgroundColor: "#ffffff",
