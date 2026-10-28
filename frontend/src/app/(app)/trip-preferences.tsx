@@ -142,6 +142,7 @@ export default function HomeScreen() {
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.safe}
+      contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       automaticallyAdjustKeyboardInsets
