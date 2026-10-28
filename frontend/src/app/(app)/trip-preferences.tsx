@@ -6,6 +6,8 @@ import {
   Pressable,
   Animated,
   ScrollView,
+  Platform,
+  Keyboard,
 } from "react-native";
 import {
   fontSizes,
@@ -16,7 +18,7 @@ import {
 } from "@/constants/tokens";
 import { useState } from "react";
 import { SymbolView } from "expo-symbols";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
 
 const transportationOptions = [
@@ -64,6 +66,18 @@ const interestOptions = [
 
 type Interest = (typeof interestOptions)[number]["value"];
 
+type TripPreferences = {
+  destination: string;
+  startLocation: string;
+  startDate: Date;
+  endDate: Date;
+  startTime: Date;
+  endTime: Date;
+  budget: string;
+  transportationMethod: TransportationMethod;
+  interests: Interest[];
+};
+
 export default function HomeScreen() {
   const theme = useTheme();
 
@@ -81,6 +95,22 @@ export default function HomeScreen() {
   const [transportationMethod, setTransportationMethod] =
     useState<TransportationMethod>("walking");
   const [interests, setInterests] = useState<Interest[]>([]);
+
+  const onPress = () => {
+    const preferences: TripPreferences = {
+      destination,
+      startLocation,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      budget,
+      transportationMethod,
+      interests,
+    };
+
+    console.log(preferences);
+  };
 
   const [btnScale] = useState(() => new Animated.Value(1));
   const pressIn = () =>
@@ -161,6 +191,7 @@ export default function HomeScreen() {
             />
             <Pressable
               onPress={() => {
+                Keyboard.dismiss();
                 setShowStartPicker(!showStartPicker);
                 setShowEndPicker(false);
                 setShowStartTimePicker(false);
@@ -197,6 +228,7 @@ export default function HomeScreen() {
             />
             <Pressable
               onPress={() => {
+                Keyboard.dismiss();
                 setShowEndPicker(!showEndPicker);
                 setShowStartPicker(false);
                 setShowStartTimePicker(false);
@@ -219,7 +251,10 @@ export default function HomeScreen() {
         <DateTimePicker
           value={startDate}
           mode="date"
-          display="inline"
+          display={Platform.OS === "ios" ? "inline" : "default"}
+          presentation="dialog"
+          onDismiss={() => setShowStartPicker(false)}
+          accentColor={theme.primary}
           themeVariant="light"
           minimumDate={new Date()}
           onValueChange={(_, date) => {
@@ -238,7 +273,10 @@ export default function HomeScreen() {
         <DateTimePicker
           value={endDate}
           mode="date"
-          display="inline"
+          display={Platform.OS === "ios" ? "inline" : "default"}
+          presentation="dialog"
+          onDismiss={() => setShowEndPicker(false)}
+          accentColor={theme.primary}
           themeVariant="light"
           minimumDate={startDate}
           onValueChange={(_, date) => {
@@ -267,6 +305,7 @@ export default function HomeScreen() {
             />
             <Pressable
               onPress={() => {
+                Keyboard.dismiss();
                 setShowStartTimePicker(!showStartTimePicker);
                 setShowEndTimePicker(false);
                 setShowStartPicker(false);
@@ -302,6 +341,7 @@ export default function HomeScreen() {
             />
             <Pressable
               onPress={() => {
+                Keyboard.dismiss();
                 setShowEndTimePicker(!showEndTimePicker);
                 setShowStartTimePicker(false);
                 setShowStartPicker(false);
@@ -324,19 +364,29 @@ export default function HomeScreen() {
           <DateTimePicker
             value={startTime}
             mode="time"
-            display="spinner"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            presentation="dialog"
+            onDismiss={() => setShowStartTimePicker(false)}
+            accentColor={theme.primary}
             themeVariant="light"
-            onValueChange={(_, time) => setStartTime(time)}
+            onValueChange={(_, time) => {
+              setStartTime(time);
+              if (Platform.OS === "android") {
+                setShowStartTimePicker(false);
+              }
+            }}
           />
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setShowStartTimePicker(false)}
-            style={styles.doneButton}
-          >
-            <Text style={{ color: theme.primary, fontSize: fontSizes.body }}>
-              Done
-            </Text>
-          </Pressable>
+          {Platform.OS === "ios" && (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setShowStartTimePicker(false)}
+              style={styles.doneButton}
+            >
+              <Text style={{ color: theme.primary, fontSize: fontSizes.body }}>
+                Done
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -345,19 +395,29 @@ export default function HomeScreen() {
           <DateTimePicker
             value={endTime}
             mode="time"
-            display="spinner"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            presentation="dialog"
+            onDismiss={() => setShowEndTimePicker(false)}
+            accentColor={theme.primary}
             themeVariant="light"
-            onValueChange={(_, time) => setEndTime(time)}
+            onValueChange={(_, time) => {
+              setEndTime(time);
+              if (Platform.OS === "android") {
+                setShowEndTimePicker(false);
+              }
+            }}
           />
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setShowEndTimePicker(false)}
-            style={styles.doneButton}
-          >
-            <Text style={{ color: theme.primary, fontSize: fontSizes.body }}>
-              Done
-            </Text>
-          </Pressable>
+          {Platform.OS === "ios" && (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setShowEndTimePicker(false)}
+              style={styles.doneButton}
+            >
+              <Text style={{ color: theme.primary, fontSize: fontSizes.body }}>
+                Done
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -442,7 +502,7 @@ export default function HomeScreen() {
       <Animated.View style={{ transform: [{ scale: btnScale }] }}>
         <Pressable
           accessibilityRole="button"
-          onPress={() => console.log("generated itinerary")}
+          onPress={onPress}
           onPressIn={pressIn}
           onPressOut={pressOut}
           style={({ pressed }) => [
