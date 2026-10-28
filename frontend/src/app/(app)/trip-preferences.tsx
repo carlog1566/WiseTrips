@@ -16,7 +16,7 @@ import {
   colorPallet,
   radious,
 } from "@/constants/tokens";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { SymbolView } from "expo-symbols";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
@@ -66,8 +66,13 @@ const interestOptions = [
 
 type Interest = (typeof interestOptions)[number]["value"];
 
+type DestinationField = {
+  id: number;
+  value: string;
+};
+
 type TripPreferences = {
-  destination: string;
+  destinations: string[];
   startLocation: string;
   startDate: Date;
   endDate: Date;
@@ -81,7 +86,10 @@ type TripPreferences = {
 export default function HomeScreen() {
   const theme = useTheme();
 
-  const [destination, setDestination] = useState("");
+  const [destinations, setDestinations] = useState<DestinationField[]>([
+    { id: 0, value: "" },
+  ]);
+  const nextDestinationId = useRef(1);
   const [startLocation, setStartLocation] = useState("");
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
@@ -98,7 +106,9 @@ export default function HomeScreen() {
 
   const onPress = () => {
     const preferences: TripPreferences = {
-      destination,
+      destinations: destinations
+        .map((destination) => destination.value.trim())
+        .filter((destination) => destination.length > 0),
       startLocation,
       startDate,
       endDate,
@@ -138,21 +148,41 @@ export default function HomeScreen() {
     >
       <View style={styles.section}>
         <Text style={styles.label}>Where to?</Text>
-        <CustomTextInput
-          icon={{ ios: "magnifyingglass", android: "search" }}
-          value={destination}
-          autoCapitalize="words"
-          autoCorrect={true}
-          onChangeText={setDestination}
-          placeholder="Enter destination"
-        />
+        {destinations.map((destination, index) => (
+          <CustomTextInput
+            key={destination.id}
+            icon={{ ios: "magnifyingglass", android: "search" }}
+            value={destination.value}
+            autoCapitalize="words"
+            autoCorrect={true}
+            onChangeText={(text) =>
+              setDestinations((current) =>
+                current.map((field) =>
+                  field.id === destination.id ? { ...field, value: text } : field,
+                ),
+              )
+            }
+            onRemove={
+              index > 0
+                ? () =>
+                    setDestinations((current) =>
+                      current.filter((field) => field.id !== destination.id),
+                    )
+                : undefined
+            }
+            placeholder={
+              index === 0 ? "Enter destination" : "Enter another destination"
+            }
+          />
+        ))}
         <Pressable
           style={({ pressed }) => [
             styles.textButtonContainer,
             pressed && { opacity: 0.7 },
           ]}
           onPress={() => {
-            console.log("hello");
+            const id = nextDestinationId.current++;
+            setDestinations((current) => [...current, { id, value: "" }]);
           }}
         >
           <Text style={styles.text}>+ Add More</Text>

@@ -3,6 +3,7 @@ import {
   View,
   TextInput as NativeTextInput,
   StyleSheet,
+  Pressable,
   type TextInputProps,
 } from "react-native";
 import { SymbolView } from "expo-symbols";
@@ -11,6 +12,7 @@ import { colorPallet, fontSizes, spacing, radious } from "@/constants/tokens";
 
 type Props = TextInputProps & {
   icon: ComponentProps<typeof SymbolView>["name"];
+  onRemove?: () => void;
 };
 
 export default function CustomTextInput({
@@ -18,6 +20,7 @@ export default function CustomTextInput({
   style,
   onFocus,
   onBlur,
+  onRemove,
   ...props
 }: Props) {
   const theme = useTheme();
@@ -44,6 +47,24 @@ export default function CustomTextInput({
           onBlur?.(event);
         }}
       />
+      {onRemove && (
+        <Pressable
+          onPress={onRemove}
+          accessibilityRole="button"
+          accessibilityLabel="Remove destination"
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.removeButton,
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <SymbolView
+            name={{ ios: "xmark", android: "close" }}
+            size={18}
+            tintColor={colorPallet.muted}
+          />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -62,5 +83,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     fontSize: fontSizes.body,
+  },
+  removeButton: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
