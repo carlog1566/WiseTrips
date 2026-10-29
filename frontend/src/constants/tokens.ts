@@ -27,8 +27,10 @@ export const fontWeights = {
 } as const;
 
 export const colorPallet = {
-  muted: '#919191',
-  border : '#C6C6C6'
+  muted: '#668187',
+  border: '#C7DEE0',
+  surface: '#F3FAFA',
+  error: '#B34B3F',
 } as const;
 
 export const radious = {

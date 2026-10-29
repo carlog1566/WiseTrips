@@ -415,7 +415,7 @@ export default function HomeScreen() {
         <View style={styles.transportationOptions}>
           {transportationOptions.map((option) => {
             const selected = transportationMethod === option.value;
-            const color = selected ? theme.primary : theme.text;
+            const color = selected ? theme.background : theme.text;
             return (
               <Pressable
                 key={option.value}
@@ -424,7 +424,8 @@ export default function HomeScreen() {
                   styles.transportationOption,
                   selected && {
                     borderColor: theme.primary,
-                    backgroundColor: "#D9EDFF",
+                    backgroundColor: theme.primary,
+                    borderRadius: radious.md,
                   },
                   pressed && { opacity: 0.7 },
                 ]}
@@ -444,7 +445,7 @@ export default function HomeScreen() {
         <View style={styles.interestOptions}>
           {interestOptions.map((option) => {
             const selected = interests.includes(option.value);
-            const color = selected ? theme.primary : theme.text;
+            const color = selected ? theme.background : theme.text;
             return (
               <Pressable
                 key={option.value}
@@ -459,7 +460,7 @@ export default function HomeScreen() {
                   styles.interestOption,
                   selected && {
                     borderColor: theme.primary,
-                    backgroundColor: "#D9EDFF",
+                    backgroundColor: theme.primary,
                   },
                   pressed && { opacity: 0.7 },
                 ]}
@@ -479,7 +480,7 @@ export default function HomeScreen() {
         <View style={styles.transportationOptions}>
           {paceOptions.map((option) => {
             const selected = pace === option.value;
-            const color = selected ? theme.primary : theme.text;
+            const color = selected ? theme.background : theme.text;
             return (
               <Pressable
                 key={option.value}
@@ -488,7 +489,8 @@ export default function HomeScreen() {
                   styles.transportationOption,
                   selected && {
                     borderColor: theme.primary,
-                    backgroundColor: "#D9EDFF",
+                    backgroundColor: theme.primary,
+                    borderRadius: radious.md,
                   },
                   pressed && { opacity: 0.7 },
                 ]}
@@ -530,12 +532,12 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   errorText: {
-    color: "#B42318",
+    color: colorPallet.error,
     fontSize: fontSizes.label,
   },
   screen: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFFFFF",
   },
   generateButton: {
     width: "100%",
@@ -589,7 +591,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
     borderRadius: radious.md,
-    backgroundColor: "#F5F5F7",
+    backgroundColor: colorPallet.surface,
   },
   // Five interests don't fit in one row, so they wrap (3 per row)
   interestOptions: {
@@ -611,7 +613,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
     borderRadius: radious.md,
-    backgroundColor: "#F5F5F7",
+    backgroundColor: colorPallet.surface,
   },
   transportationLabel: {
     fontSize: fontSizes.caption,
