@@ -25,12 +25,12 @@ class PlaceCreate(BaseModel):
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     category: str = Field(min_length=1)
-    rating: float = Field(ge=0, le=5)
+    rating: float | None = Field(default=None, ge=0, le=5)
     estimated_cost: float = Field(ge=0)
 
 class ItineraryStopCreate(BaseModel):
-    trip_id: int
-    place_id: int
+    trip_id: int = Field(gt=0)
+    place_id: int = Field (gt=0)
     stop_order: int = Field(ge=1)
     arrival_time: time
     departure_time: time
