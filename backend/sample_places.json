@@ -1,0 +1,102 @@
+{
+    "places" : [
+        {
+            "id" : 1,
+            "name" : "Los Angeles Country Museum of Art",
+            "address" : "5905 Wilshire Blvd, Los Angeles, CA 90036",
+            "latitude" : 34.063949,
+            "longitude" : -118.359234,
+            "category" : "Attraction",
+            "rating" : 4.6,
+            "estimated_cost" : 30.00
+        },
+        {
+            "id" : 2,
+            "name" : "Griffith Observatory",
+            "address" : "2800 E Observatory Rd, Los Angeles, CA 90027",
+            "latitude" : 34.118445,
+            "longitude" : -118.300401,
+            "category" : "Attraction",
+            "rating" : 4.7,
+            "estimated_cost" : 0.00
+
+
+        },
+        {
+            "id" : 3,
+            "name" : "The Getty Center",
+            "address" : "1200 Getty Center Dr, Los Angeles, CA 90049",
+            "latitude" : 34.077348,
+            "longitude" : -118.474820,
+            "category" : "Attraction",
+            "rating" : 4.8,
+            "estimated_cost" : 0.0
+        },
+        {
+            "id" : 4,
+            "name" : "Quarters Korean BBQ",
+            "address" : "3465 W 6th St #C-130, Los Angeles, CA 90020",
+            "latitude" : 34.064011,
+            "longitude" : -118.297712,
+            "category" : "Food",
+            "rating" : 4.4,
+            "estimated_cost" : 70.00
+
+
+        },
+        {
+            "id" : 5,
+            "name" : "Bottega Louie",
+            "address" : "700 S Grand Ave, Los Angeles, CA 90017",
+            "latitude" : 34.047058,
+            "longitude" : -118.256549,
+            "category" : "Food",
+            "rating" : 4.5,
+            "estimated_cost" : 45.00
+        },
+        {
+            "id" : 6,
+            "name" : "Kouraku",
+            "address" : "314 E 2nd St, Los Angeles, CA 90012",
+            "latitude" : 34.048931,
+            "longitude" : -118.241421,
+            "category" : "Food",
+            "rating" : 4.5,
+            "estimated_cost" : 25.00
+
+
+        },
+        {
+            "id" : 7,
+            "name" : "The Grove",
+            "address" : "189 The Grove Dr, Los Angeles, CA 90036",
+            "latitude" : 34.071948,
+            "longitude" : -118.357522,
+            "category" : "Shopping",
+            "rating" : 4.6,
+            "estimated_cost" : 0.00
+        },
+        {
+            "id" : 8,
+            "name" : "The Bloc",
+            "address" : "700 W 7th St, Los Angeles, CA 90017",
+            "latitude" : 34.047630,
+            "longitude" : -118.258957,
+            "category" : "Shopping",
+            "rating" : 4.4,
+            "estimated_cost" : 0.00
+
+
+        },
+ {
+       "id": 9,
+       "name": "Stagger Coffee",
+       "address": "3069 1/2 W 8th St, Los Angeles, CA 90005",
+       "latitude": 34.118404,
+       "longitude": -118.300514,
+       "category": "Food",
+       "rating": 4.4,
+       "cost": 0.00
+   	}
+    ]
+}
