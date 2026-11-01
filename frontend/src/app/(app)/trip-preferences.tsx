@@ -133,8 +133,6 @@ export default function HomeScreen() {
   const onPress = async () => {
     setError("");
     setGenerating(true);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    const errorMessage = "Please fill in all fields correctly.";
 
     const startsAt = new Date(tripDate);
     startsAt.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
@@ -142,20 +140,37 @@ export default function HomeScreen() {
     endsAt.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
     const parsedBudget = Number(budget);
 
+    if (startsAt.getTime() <= Date.now()) {
+      setError(
+        "Please choose a future start date and time. For today, the start time must be later than the current time.",
+      );
+      setGenerating(false);
+      return;
+    }
+
+    if (endsAt.getTime() <= startsAt.getTime()) {
+      setError("End time must be later than start time.");
+      setGenerating(false);
+      return;
+    }
+
+    if (interests.length === 0) {
+      setError("Please select at least one interest.");
+      setGenerating(false);
+      return;
+    }
+
     if (
-      !startLocation.trim() ||
       !destination.trim() ||
+      !startLocation.trim() ||
+      !budget.trim() ||
       !transportationMethod ||
       !Number.isFinite(startsAt.getTime()) ||
       !Number.isFinite(endsAt.getTime()) ||
-      startsAt.getTime() <= Date.now() ||
-      endsAt.getTime() <= startsAt.getTime() ||
-      !budget.trim() ||
       !Number.isFinite(parsedBudget) ||
-      parsedBudget < 0 ||
-      interests.length === 0
+      parsedBudget < 0
     ) {
-      setError(errorMessage);
+      setError("Please fill in all fields correctly.");
       setGenerating(false);
       return;
     }
