@@ -134,7 +134,7 @@ export default function HomeScreen() {
           >
 
             <View style={[styles.guideArt, { backgroundColor: guide.color }]}>
-              <Text style={styles.guideArtText}>{guide.icon}</Text>
+              <Text style={styles.guideArtText}></Text>
             </View>
 
             <Text style={[styles.guideTitle, { color: theme.text }]}>{guide.title}</Text>
@@ -158,7 +158,7 @@ export default function HomeScreen() {
           >
 
             <View style={[styles.popularArt, { backgroundColor: trip.color }]}> 
-              <Text style={styles.popularArtText}>{trip.icon}</Text>
+              <Text style={styles.popularArtText}></Text>
 
               <View style={styles.popularLabel}>
                 <Text style={styles.popularTitle}>{trip.title}</Text>
