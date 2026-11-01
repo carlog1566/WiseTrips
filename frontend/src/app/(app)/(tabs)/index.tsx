@@ -1,46 +1,81 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
+import { useState } from "react";
+import type { StyleProp, ImageStyle } from "react-native";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SymbolView } from "expo-symbols";
 import { useTheme } from "@/hooks/use-theme";
 import { colorPallet, fontSizes, fontWeights, radious, spacing } from "@/constants/tokens";
+const imagePlaceholder = require("@/assets/images/placeholder.png");
 
 const featuredGuides = [
   { 
     title: "New York Guide", 
     subtitle: "Description", 
-    color: "#D7E8E8"
+    color: "#D7E8E8",
+    imageUrl: "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=600&q=80"
   },
   { 
     title: "Tokyo Guide", 
     subtitle: "Description", 
-    color: "#E5D6D1"
+    color: "#E5D6D1",
+    imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=600&q=80"
   },
   { 
     title: "Paris Guide", 
     subtitle: "Description", 
-    color: "#DDE4D3"
+    color: "#DDE4D3",
+    imageUrl: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&q=80"
   },
 ];
 
 const popularTrips = [
   { 
     title: "New York", 
-    color: "#C4DDE3"
+    color: "#C4DDE3",
+    imageUrl: "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=500&q=80"
   },
   { 
     title: "Italy", 
-    color: "#E4D7CD"
+    color: "#E4D7CD",
+    imageUrl: "https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=500&q=80"
   },
   { 
     title: "Japan", 
-    color: "#D5DCE8"
+    color: "#D5DCE8",
+    imageUrl: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=500&q=80"
   },
   { 
     title: "Iceland", 
-    color: "#D6E5E0"
+    color: "#D6E5E0",
+    imageUrl: "https://images.unsplash.com/photo-1504829857797-ddff29c27927?auto=format&fit=crop&w=500&q=80"
   },
 ];
+
+function DestinationImage({
+  uri,
+  style,
+  accessibilityLabel,
+}: {
+  uri: string;
+  style: StyleProp<ImageStyle>;
+  accessibilityLabel: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <Image
+      accessibilityLabel={accessibilityLabel}
+      contentFit="cover"
+      onError={() => setHasError(true)}
+      placeholder={imagePlaceholder}
+      placeholderContentFit="cover"
+      source={hasError ? imagePlaceholder : { uri }}
+      style={style}
+      transition={200}
+    />
+  );
+}
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -133,9 +168,11 @@ export default function HomeScreen() {
             style={({ pressed }) => [styles.guideCard, pressed && styles.pressed]}
           >
 
-            <View style={[styles.guideArt, { backgroundColor: guide.color }]}>
-              <Text style={styles.guideArtText}></Text>
-            </View>
+            <DestinationImage 
+              uri={guide.imageUrl} 
+              accessibilityLabel={`${guide.title} destination`} 
+              style={styles.guideArt} 
+            />
 
             <Text style={[styles.guideTitle, { color: theme.text }]}>{guide.title}</Text>
             <Text style={[styles.guideSubtitle, { color: colorPallet.muted }]}>{guide.subtitle}</Text>
@@ -157,8 +194,12 @@ export default function HomeScreen() {
             style={({ pressed }) => [styles.popularCard, pressed && styles.pressed]}
           >
 
-            <View style={[styles.popularArt, { backgroundColor: trip.color }]}> 
-              <Text style={styles.popularArtText}></Text>
+            <View style={styles.popularArt}> 
+              <DestinationImage 
+                uri={trip.imageUrl} 
+                accessibilityLabel={`${trip.title} destination`} 
+                style={StyleSheet.absoluteFill} 
+              />
 
               <View style={styles.popularLabel}>
                 <Text style={styles.popularTitle}>{trip.title}</Text>
@@ -313,7 +354,7 @@ const styles = StyleSheet.create({
     bottom: 0, 
     paddingHorizontal: spacing.xs, 
     paddingVertical: spacing.xs, 
-    backgroundColor: "rgba(0,0,0,0.2)" 
+    backgroundColor: "rgba(0,0,0,0.4)" 
   },
   popularTitle: { 
     color: "#FFFFFF", 
