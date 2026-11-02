@@ -52,6 +52,21 @@ const popularTrips = [
   },
 ];
 
+type RecentItinerary = {
+  destination: string;
+  dates: string;
+  imageUrl: string;
+};
+
+const useMockRecentItinerary = false;
+const recentItinerary: RecentItinerary | null = useMockRecentItinerary
+  ? {
+      destination: "New York, USA",
+      dates: "Oct 23 - Oct 27, 2024",
+      imageUrl: featuredGuides[0].imageUrl,
+    }
+  : null;
+
 function DestinationImage({
   uri,
   style,
@@ -79,11 +94,6 @@ function DestinationImage({
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const { recentDestination, recentDates } = useLocalSearchParams<{
-    recentDestination?: string;
-    recentDates?: string;
-  }>();
-  const hasRecentItinerary = Boolean(recentDestination);
 
   return (
     <ScrollView 
@@ -121,7 +131,7 @@ export default function HomeScreen() {
         />
       </View>
 
-      {hasRecentItinerary ? (
+      {recentItinerary ? (
         <>
           <View style={styles.sectionHeading}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Plan</Text>
@@ -130,29 +140,51 @@ export default function HomeScreen() {
 
           <Pressable 
             accessibilityRole="button" 
-            accessibilityLabel={`Continue planning your trip to ${recentDestination}`} 
+            accessibilityLabel={`Continue planning your trip to ${recentItinerary.destination}`} 
             onPress={() => router.navigate("/(app)/trip-preferences")} 
-            style={({ pressed }) => [styles.continueCard, { backgroundColor: theme.primaryBackground }, 
-            pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.continueCard, 
+              { backgroundColor: theme.primaryBackground }, 
+              pressed && styles.pressed
+            ]}
           >
-
-            <View style={[styles.destinationArt, { backgroundColor: "#B5D4D8" }]}>
-              <Text style={styles.artText}>TRIP</Text>
-            </View>
-
+            <DestinationImage 
+              uri={recentItinerary.imageUrl} 
+              accessibilityLabel={`${recentItinerary.destination} destination`} 
+              style={styles.destinationArt} 
+            />
+            
             <View style={styles.continueCopy}>
               <Text style={[styles.cardKicker, { color: colorPallet.muted }]}>Continue planning</Text>
-              <Text style={[styles.continueTitle, { color: theme.text }]}>{recentDestination}</Text>
-              <Text style={[styles.cardMeta, { color: colorPallet.muted }]}>{recentDates ?? "Trip preferences saved"}</Text>
+              <Text style={[styles.continueTitle, { color: theme.text }]}>{recentItinerary.destination}</Text>
+              <Text style={[styles.cardMeta, { color: colorPallet.muted }]}>{recentItinerary.dates}</Text>
             </View>
 
-            <SymbolView 
-              name={{ ios: "chevron.right", android: "chevron_right" }} 
-              size={20} tintColor={theme.primary} 
-            />
+            <SymbolView name={{ ios: "chevron.right", android: "chevron_right" }} size={20} tintColor={theme.primary} />
           </Pressable>
         </>
-      ) : null}
+      ) : (
+        <>
+          <View style={styles.sectionHeading}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Continue planning</Text>
+          </View>
+          
+          <Text style={[styles.emptyPlanMessage, { color: theme.textSecondary }]}>You have no itineraries. Would you like to create one?</Text>
+          
+          <Pressable 
+            accessibilityRole="button" 
+            accessibilityLabel="Plan a trip" 
+            onPress={() => router.navigate("/(app)/trip-preferences")} 
+            style={({ pressed }) => [
+              styles.emptyPlanButton, 
+              { backgroundColor: theme.primary }, 
+              pressed && styles.pressed
+            ]}
+          >
+            <Text style={styles.emptyPlanButtonText}>+ Plan a trip</Text>
+          </Pressable>
+        </>
+      )}
 
       <View style={styles.sectionHeading}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Featured Destinations</Text>
@@ -298,6 +330,23 @@ const styles = StyleSheet.create({
   },
   cardMeta: { 
     fontSize: fontSizes.caption 
+  },
+  emptyPlanMessage: { 
+    fontSize: fontSizes.body, 
+    lineHeight: 22 
+  },
+  emptyPlanButton: { 
+    minHeight: 50, 
+    borderRadius: radious.md, 
+    alignItems: "center", 
+    justifyContent: "center", 
+    paddingHorizontal: spacing.lg, 
+    marginTop: spacing.sm 
+  },
+  emptyPlanButtonText: { 
+    color: "#FFFFFF", 
+    fontSize: fontSizes.body, 
+    fontWeight: fontWeights.semibold 
   },
   featuredRow: { 
     flexDirection: "row", 
