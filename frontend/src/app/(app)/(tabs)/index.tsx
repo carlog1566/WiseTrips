@@ -102,25 +102,6 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
     >
 
-      <View style={styles.header}>
-
-        <View style={styles.brand}>
-          <Image 
-            accessibilityLabel="WiseTrips logo" 
-            contentFit="contain" 
-            source={require("@/assets/images/wisetrips-logo.png")} 
-            style={styles.logo} 
-          />
-
-          <Text style={[styles.brandName, { color: theme.text }]}>WiseTrips</Text>
-        </View>
-        
-        <Pressable accessibilityRole="button" accessibilityLabel="Notifications" hitSlop={10}>
-          <SymbolView name={{ ios: "bell", android: "notifications_none" }} size={24} tintColor={theme.text} />
-        </Pressable>
-
-      </View>
-
       <View style={[styles.searchBox, { borderColor: colorPallet.border }]}>
         <SymbolView name={{ ios: "magnifyingglass", android: "search" }} size={20} tintColor={theme.text} />
         <TextInput 
