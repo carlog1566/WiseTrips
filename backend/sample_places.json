@@ -8,7 +8,7 @@
             "longitude" : -118.359234,
             "category" : "Attraction",
             "rating" : 4.6,
-            "estimatedCost" : 30.00
+            "estimated_cost" : 30.00
         },
         {
             "id" : 2,
@@ -18,7 +18,7 @@
             "longitude" : -118.300401,
             "category" : "Attraction",
             "rating" : 4.7,
-            "estimatedCost" : 0.00
+            "estimated_cost" : 0.00
 
         },
         {
@@ -29,7 +29,7 @@
             "longitude" : -118.474820,
             "category" : "Attraction",
             "rating" : 4.8,
-            "estimatedCost" : 0.0
+            "estimated_cost" : 0.0
         },
         {
             "id" : 4,
@@ -39,7 +39,7 @@
             "longitude" : -118.297712,
             "category" : "Food",
             "rating" : 4.4,
-            "estimatedCost" : 70.00
+            "estimated_cost" : 70.00
 
         },
         {
@@ -50,7 +50,7 @@
             "longitude" : -118.256549,
             "category" : "Food",
             "rating" : 4.5,
-            "estimatedCost" : 45.00
+            "estimated_cost" : 45.00
         },
         {
             "id" : 6,
@@ -60,7 +60,7 @@
             "longitude" : -118.241421,
             "category" : "Food",
             "rating" : 4.5,
-            "estimatedCost" : 25.00
+            "estimated_cost" : 25.00
 
         },
         {
@@ -71,7 +71,7 @@
             "longitude" : -118.357522,
             "category" : "Shopping",
             "rating" : 4.6,
-            "estimatedCost" : 0.00
+            "estimated_cost" : 0.00
         },
         {
             "id" : 8,
@@ -81,7 +81,7 @@
             "longitude" : -118.258957,
             "category" : "Shopping",
             "rating" : 4.4,
-            "estimatedCost" : 0.00
+            "estimated_cost" : 0.00
 
         }
     ]
