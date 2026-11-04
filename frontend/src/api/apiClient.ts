@@ -11,7 +11,7 @@ export class ApiClientError extends Error {
     public readonly details: string,
   ) {
     super(`Request failed (${status})`);
-    this.name = "ApiError";
+    this.name = "ApiClientError";
   }
 }
 
