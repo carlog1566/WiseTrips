@@ -16,7 +16,12 @@ def recommend_places(places: list[Place], preferences: TripPreferencesCreate) ->
 
         # Could change so that instead of basing on a set min/max, could be like within variation
         if place.estimated_cost <= preferences.budget:
-            score += (1 * budget_weight)
+            if place.estimated_cost <= (0.25 * preferences.budget):
+                score += (1 * budget_weight)
+            elif place.estimated_cost <= (0.50 * preferences.budget):
+                score += (0.75 * budget_weight)
+            elif place.estimated_cost <= (0.75 * preferences.budget):
+                score += (0.5 * budget_weight)
         if _normalise(place.category) in interests:
             score += (1 * interest_weight)
         if place.rating >= preferred_rating and place.rating != None:
