@@ -39,9 +39,9 @@ def test():
         starting_location = "Downtown Los Angeles",
         start_time = time(9, 0),
         end_time = time(17,0),
-        budget = 100.00,
+        budget = 45.00,
         transportation_mode = "driving",
-        interests = ["Attraction"], # can change interests, which should change printed results
+        interests = ["Attraction", "Food"], # can change interests, which should change printed results
         pace = "slow",
     )
 

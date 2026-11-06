@@ -22,6 +22,8 @@ def recommend_places(places: list[Place], preferences: TripPreferencesCreate) ->
                 score += (0.75 * budget_weight)
             elif place.estimated_cost <= (0.75 * preferences.budget):
                 score += (0.5 * budget_weight)
+            else:
+                score += (0.25 * budget_weight)
         if _normalise(place.category) in interests:
             score += (1 * interest_weight)
         if place.rating >= preferred_rating and place.rating != None:
@@ -39,9 +41,9 @@ def test():
             starting_location = "Downtown Los Angeles",
             start_time = time(9, 0),
             end_time = time(17,0),
-            budget = 10.00,
+            budget = 70.00,
             transportation_mode = "driving",
-            interests = ["Attraction"], # can change interests, which should change printed results
+            interests = ["Attraction", "Food"], # can change interests, which should change printed results
             pace = "slow",
         )
     places = discover_places(preferences)
