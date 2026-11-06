@@ -1,4 +1,4 @@
-import type { ItineraryResponse } from "@/api/models";
+import type { ItineraryResponse } from "@/itinerary/itinerary.types";
 
 export function parseItineraryParam(
   value?: string | string[],
