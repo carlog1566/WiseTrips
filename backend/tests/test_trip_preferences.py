@@ -34,7 +34,7 @@ def test_generate_trip_returns_itinerary():
 
     assert "stops" in response_data
     assert "total_travel_minutes" in response_data
-    assert response_data["total_travel_minutes"] == 0
+    assert response_data["total_travel_minutes"] == 30
 
 
 def test_generate_trip_rejects_invalid_time():

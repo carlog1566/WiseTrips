@@ -1,3 +1,5 @@
+from datetime import time
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -6,6 +8,7 @@ from app.models import Trip
 from app.schemas import (
     ItineraryResponse,
     TripPreferencesCreate,
+    ItineraryStopCreate
 )
 
 
@@ -47,7 +50,15 @@ def generate_itinerary(
             detail="Unable to save trip",
         ) from error
 
+    sample_stop = ItineraryStopCreate(
+        trip_id=trip.id,
+        place_id=1,
+        stop_order=1,
+        arrival_time=time(10, 0),
+        departure_time=time(11, 30),
+    )
+
     return ItineraryResponse(
-        stops=[],
-        total_travel_minutes=0,
+        stops=[sample_stop],
+        total_travel_minutes=30,
     )
