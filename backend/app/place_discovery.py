@@ -1,6 +1,6 @@
 import json
 from datetime import date, time #only neccessary for testing, can remove after 
-from schemas import Place, TripPreferencesCreate
+from .schemas import Place, TripPreferencesCreate
 
 def load_sample_places() -> list[Place]:
     with open("sample_places.json", "r") as file:

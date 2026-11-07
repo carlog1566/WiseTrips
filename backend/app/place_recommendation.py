@@ -1,5 +1,5 @@
-from schemas import Place, TripPreferencesCreate, PlaceCreate
-from place_discovery import discover_places, _normalise
+from .schemas import Place, TripPreferencesCreate
+from .place_discovery import discover_places, _normalise
 from datetime import date, time #only neccessary for testing, can remove after
 
 def recommend_places(places: list[Place], preferences: TripPreferencesCreate) -> list[Place]:
@@ -26,7 +26,7 @@ def recommend_places(places: list[Place], preferences: TripPreferencesCreate) ->
                 score += (0.25 * budget_weight)
         if _normalise(place.category) in interests:
             score += (1 * interest_weight)
-        if place.rating >= preferred_rating and place.rating != None:
+        if place.rating is not None and place.rating >= preferred_rating:
             score += (1 * rating_weight)
         # pacing
         final_list.append((score, place))

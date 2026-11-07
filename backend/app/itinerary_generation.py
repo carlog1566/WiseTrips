@@ -1,6 +1,6 @@
-from schemas import Place, TripPreferencesCreate, PlaceCreate, ItineraryResponse, ItineraryStop, ItineraryStopCreate
-from place_discovery import discover_places, _normalise
-from place_recommendation import recommend_places
+from .schemas import Place, TripPreferencesCreate, ItineraryResponse, ItineraryStopCreate
+from .place_discovery import discover_places
+from .place_recommendation import recommend_places
 from datetime import date, time
 
 # Hardcoded time estimate for place
@@ -13,7 +13,6 @@ def estimate_place_time(place: Place) -> int:
         return 90
     else:
         return 60
-
 
 def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate) -> ItineraryResponse:
     starting_time = preferences.start_time.hour * 60 + preferences.start_time.minute
