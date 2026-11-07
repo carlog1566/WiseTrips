@@ -3,11 +3,6 @@ from place_discovery import discover_places, _normalise
 from place_recommendation import recommend_places
 from datetime import date, time
 
-# Notes for future:
-#       When detecting food stop, check type of place and reduce to like
-#       one meal place, 1/2 snack places, one dessert places, etc.
-#       ^ Can apply for places like shopping, if mall, pick one or two, etc..
-
 # Hardcoded time estimate for place
 def estimate_place_time(place: Place) -> int:
     if place.category == "Attraction":
@@ -29,16 +24,22 @@ def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate) 
     itinerary_stops = []
     category_count_map = {}
 
+    # Select up to 3 stops when there are at most 5 candidates, otherwise up to 5.
     list_length = len(places)
     if list_length <= 0:
         raise ValueError("Invalid or no place count")
     elif list_length <= 5:
-        list_range = 2
+        max_stops = 3
     else:
-        list_range = 4
-    
-    for i in range(list_range):
-        time_at_place = estimate_place_time(places[i])
+        max_stops = 5
+
+    for i, place in enumerate(places):
+        category = place.category
+
+        if len(itinerary_stops) >= max_stops:
+            break
+
+        time_at_place = estimate_place_time(place)
 
         # Calculate potential time variance due to pacing
         if preferences.pace == "slow":
@@ -47,16 +48,16 @@ def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate) 
             time_at_place = int(time_at_place * 0.75)
 
         # Check next place can fit within time and budget constraints
-        if (estimated_travel_time + time_at_place > time_available) or (places[i].estimated_cost + current_budget > preferences.budget):
+        if (estimated_travel_time + time_at_place > time_available) or (place.estimated_cost + current_budget > preferences.budget):
             continue
 
         # If there are more than 2 places of the same category, skip the remaining places of same category
-        category = places[i].category
         if category_count_map.get(category, 0) >= 2:
             continue
+
         category_count_map[category] = category_count_map.get(category, 0) + 1
 
-        current_budget += places[i].estimated_cost
+        current_budget += place.estimated_cost
 
         # Convert time in minutes for arrival and departure into datetime time format
         arrival_hours, arrival_minutes = divmod(starting_time + estimated_travel_time, 60)
@@ -69,8 +70,8 @@ def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate) 
 
         itinerary_stops.append(ItineraryStopCreate(
             trip_id=1, 
-            place_id=places[i].id,
-            stop_order=i + 1, 
+            place_id=place.id,
+            stop_order=len(itinerary_stops) + 1, 
             arrival_time=estimated_arrival, 
             departure_time=estimated_departure))
         
@@ -84,7 +85,7 @@ def test():
             starting_location = "Downtown Los Angeles",
             start_time = time(9, 0),
             end_time = time(17,0),
-            budget = 50.00,
+            budget = 70.00,
             transportation_mode = "driving",
             interests = ["Attraction", "Food"], # can change interests, which should change printed results
             pace = "slow",
@@ -98,7 +99,7 @@ def test():
     print("Recommended Places:")
     recommended_places = recommend_places(places, preferences)
     for place in recommended_places:
-        print(f"{place.name} , ID: {place.id}")
+        print(f"{place.name} , ID: {place.id}, Category: {place.category}")
     print("")
 
     results = generate_itinerary(recommended_places, preferences)
