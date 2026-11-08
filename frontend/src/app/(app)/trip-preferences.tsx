@@ -10,6 +10,7 @@ import {
   Keyboard,
   ActivityIndicator,
 } from "react-native";
+import { router } from "expo-router";
 import {
   fontSizes,
   spacing,
@@ -23,6 +24,38 @@ import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
 
 import { apiClient, ApiClientError } from "@/api/apiClient";
+import type { ItineraryResponse } from "@/itinerary/itinerary.types";
+import { useGenerateItinerary } from "@/hooks/use-generate-itinerary";
+
+const fakeItineraryResponse: ItineraryResponse = {
+  stops: [
+    {
+      id: 1,
+      trip_id: 1,
+      place_id: 101,
+      stop_order: 1,
+      arrival_time: "09:00:00",
+      departure_time: "10:00:00",
+    },
+    {
+      id: 2,
+      trip_id: 1,
+      place_id: 102,
+      stop_order: 2,
+      arrival_time: "10:15:00",
+      departure_time: "11:45:00",
+    },
+    {
+      id: 3,
+      trip_id: 1,
+      place_id: 103,
+      stop_order: 3,
+      arrival_time: "12:00:00",
+      departure_time: "13:00:00",
+    },
+  ],
+  total_travel_minutes: 30,
+};
 
 const transportationOptions = [
   {
@@ -128,11 +161,11 @@ export default function HomeScreen() {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [pace, setPace] = useState<Pace>("relaxed");
   const [error, setError] = useState("");
-  const [isGenerating, setGenerating] = useState(false);
+
+  const generate = useGenerateItinerary();
 
   const onPress = async () => {
     setError("");
-    setGenerating(true);
 
     const startsAt = new Date(tripDate);
     startsAt.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
@@ -144,19 +177,16 @@ export default function HomeScreen() {
       setError(
         "Please choose a future start date and time. For today, the start time must be later than the current time.",
       );
-      setGenerating(false);
       return;
     }
 
     if (endsAt.getTime() <= startsAt.getTime()) {
       setError("End time must be later than start time.");
-      setGenerating(false);
       return;
     }
 
     if (interests.length === 0) {
       setError("Please select at least one interest.");
-      setGenerating(false);
       return;
     }
 
@@ -171,7 +201,6 @@ export default function HomeScreen() {
       parsedBudget < 0
     ) {
       setError("Please fill in all fields correctly.");
-      setGenerating(false);
       return;
     }
 
@@ -190,20 +219,19 @@ export default function HomeScreen() {
     };
 
     try {
-      const itinerary = await apiClient.post<unknown, TripPreferencesCreate>(
-        "/api/trips/generate",
-        preferences,
-      );
+      //const itinerary = await generate.mutateAsync(preferences);
 
-      console.log(itinerary);
+      // TEMPORARY CODE FOR NOW. TO TEST
+      router.push({
+        pathname: "/itinerary",
+        params: { itinerary: JSON.stringify(fakeItineraryResponse) },
+      } as never);
     } catch (error) {
       if (error instanceof ApiClientError) {
         setError(error.details);
       } else {
         setError("Error sending data to backend");
       }
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -554,14 +582,14 @@ export default function HomeScreen() {
           onPress={onPress}
           onPressIn={pressIn}
           onPressOut={pressOut}
-          disabled={isGenerating}
+          disabled={generate.isPending}
           style={({ pressed }) => [
             styles.generateButton,
             { backgroundColor: theme.primary },
             pressed && { opacity: 0.7 },
           ]}
         >
-          {!isGenerating ? (
+          {!generate.isPending ? (
             <Text style={styles.generateButtonText}>Generate Itinerary</Text>
           ) : (
             <ActivityIndicator color={"white"} />
