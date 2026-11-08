@@ -22,12 +22,12 @@ export type Place = {
 };
 
 export type ItineraryStop = {
+  id: number;
   trip_id: number;
   place_id: number;
   stop_order: number;
   arrival_time: string;
   departure_time: string;
-  place?: Place;
 };
 
 export type ItineraryResponse = {
