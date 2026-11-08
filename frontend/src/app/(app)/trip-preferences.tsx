@@ -8,6 +8,7 @@ import {
   ScrollView,
   Platform,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import {
   fontSizes,
@@ -20,6 +21,8 @@ import { useState } from "react";
 import { SymbolView } from "expo-symbols";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
+
+import { apiClient, ApiClientError } from "@/api/apiClient";
 
 const transportationOptions = [
   {
@@ -125,10 +128,11 @@ export default function HomeScreen() {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [pace, setPace] = useState<Pace>("relaxed");
   const [error, setError] = useState("");
+  const [isGenerating, setGenerating] = useState(false);
 
-  const onPress = () => {
+  const onPress = async () => {
     setError("");
-    const errorMessage = "Please fill in all fields correctly.";
+    setGenerating(true);
 
     const startsAt = new Date(tripDate);
     startsAt.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
@@ -136,20 +140,38 @@ export default function HomeScreen() {
     endsAt.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
     const parsedBudget = Number(budget);
 
+    if (startsAt.getTime() <= Date.now()) {
+      setError(
+        "Please choose a future start date and time. For today, the start time must be later than the current time.",
+      );
+      setGenerating(false);
+      return;
+    }
+
+    if (endsAt.getTime() <= startsAt.getTime()) {
+      setError("End time must be later than start time.");
+      setGenerating(false);
+      return;
+    }
+
+    if (interests.length === 0) {
+      setError("Please select at least one interest.");
+      setGenerating(false);
+      return;
+    }
+
     if (
-      !startLocation.trim() ||
       !destination.trim() ||
+      !startLocation.trim() ||
+      !budget.trim() ||
       !transportationMethod ||
       !Number.isFinite(startsAt.getTime()) ||
       !Number.isFinite(endsAt.getTime()) ||
-      startsAt.getTime() <= Date.now() ||
-      endsAt.getTime() <= startsAt.getTime() ||
-      !budget.trim() ||
       !Number.isFinite(parsedBudget) ||
-      parsedBudget < 0 ||
-      interests.length === 0
+      parsedBudget < 0
     ) {
-      setError(errorMessage);
+      setError("Please fill in all fields correctly.");
+      setGenerating(false);
       return;
     }
 
@@ -167,7 +189,22 @@ export default function HomeScreen() {
       pace,
     };
 
-    console.log(preferences);
+    try {
+      const itinerary = await apiClient.post<unknown, TripPreferencesCreate>(
+        "/api/trips/generate",
+        preferences,
+      );
+
+      console.log(itinerary);
+    } catch (error) {
+      if (error instanceof ApiClientError) {
+        setError(error.details);
+      } else {
+        setError("Error sending data to backend");
+      }
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const [btnScale] = useState(() => new Animated.Value(1));
@@ -517,13 +554,18 @@ export default function HomeScreen() {
           onPress={onPress}
           onPressIn={pressIn}
           onPressOut={pressOut}
+          disabled={isGenerating}
           style={({ pressed }) => [
             styles.generateButton,
             { backgroundColor: theme.primary },
             pressed && { opacity: 0.7 },
           ]}
         >
-          <Text style={styles.generateButtonText}>Generate Itinerary</Text>
+          {!isGenerating ? (
+            <Text style={styles.generateButtonText}>Generate Itinerary</Text>
+          ) : (
+            <ActivityIndicator color={"white"} />
+          )}
         </Pressable>
       </Animated.View>
     </ScrollView>
