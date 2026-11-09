@@ -14,7 +14,7 @@ def estimate_place_time(place: Place) -> int:
     else:
         return 60
 
-def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate) -> ItineraryResponse:
+def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPreferencesCreate) -> ItineraryResponse:
     starting_time = preferences.start_time.hour * 60 + preferences.start_time.minute
     ending_time = preferences.end_time.hour * 60 + preferences.end_time.minute
     time_available = (ending_time - starting_time)
@@ -68,14 +68,14 @@ def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate) 
         estimated_departure = time(hour=departure_hours, minute=departure_minutes)
 
         itinerary_stops.append(ItineraryStopCreate(
-            trip_id=1, 
+            trip_id=trip_id, 
             place_id=place.id,
             stop_order=len(itinerary_stops) + 1, 
             arrival_time=estimated_arrival, 
             departure_time=estimated_departure))
         
 
-    return ItineraryResponse(stops=itinerary_stops, total_travel_minutes=estimated_travel_time)
+    return ItineraryResponse(trip_id=trip_id, stops=itinerary_stops, total_travel_minutes=estimated_travel_time)
 
 def test():
     preferences = TripPreferencesCreate(
@@ -101,7 +101,7 @@ def test():
         print(f"{place.name} , ID: {place.id}, Category: {place.category}")
     print("")
 
-    results = generate_itinerary(recommended_places, preferences)
+    results = generate_itinerary(1, recommended_places, preferences)
     print("Itinerary Generation:")
     for place in results.stops:
         print(f"ID: {place.place_id}, {place.arrival_time} - {place.departure_time}")
