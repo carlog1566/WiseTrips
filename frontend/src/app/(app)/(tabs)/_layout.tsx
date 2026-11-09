@@ -15,6 +15,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          title: "Home",
           headerTitle: "WiseTrips",
           headerLeft: () => (
             <View style={styles.headerBrand}>
