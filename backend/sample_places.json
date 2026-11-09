@@ -20,7 +20,6 @@
             "rating" : 4.7,
             "estimated_cost" : 0.00
 
-
         },
         {
             "id" : 3,
@@ -41,7 +40,6 @@
             "category" : "Food",
             "rating" : 4.4,
             "estimated_cost" : 70.00
-
 
         },
         {
@@ -64,7 +62,6 @@
             "rating" : 4.5,
             "estimated_cost" : 25.00
 
-
         },
         {
             "id" : 7,
@@ -85,18 +82,7 @@
             "category" : "Shopping",
             "rating" : 4.4,
             "estimated_cost" : 0.00
-
-
-        },
- {
-       "id": 9,
-       "name": "Stagger Coffee",
-       "address": "3069 1/2 W 8th St, Los Angeles, CA 90005",
-       "latitude": 34.118404,
-       "longitude": -118.300514,
-       "category": "Food",
-       "rating": 4.4,
-       "cost": 0.00
-   	}
+        }
     ]
+
 }
