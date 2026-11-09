@@ -59,6 +59,7 @@ def generate_itinerary(
     )
 
     return ItineraryResponse(
+        trip_id=trip.id,
         stops=[sample_stop],
         total_travel_minutes=30,
     )
