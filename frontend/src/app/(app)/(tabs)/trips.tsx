@@ -195,35 +195,6 @@ export default function TripsScreen() {
                 />
               </View>
             </Pressable>
-
-            <View
-              style={[
-                styles.summaryCard,
-                { backgroundColor: theme.primaryBackground },
-              ]}
-            >
-              <View style={styles.summaryItem}>
-                <SymbolView
-                  name={{ ios: "mappin.and.ellipse", android: "place" }}
-                  size={18}
-                  tintColor={theme.primary}
-                />
-                <Text style={[styles.summaryText, { color: theme.text }]}>
-                  {stops.length} {stops.length === 1 ? "planned stop" : "planned stops"}
-                </Text>
-              </View>
-              <View style={styles.summaryDivider} />
-              <View style={styles.summaryItem}>
-                <SymbolView
-                  name={{ ios: "car", android: "directions_car" }}
-                  size={18}
-                  tintColor={theme.primary}
-                />
-                <Text style={[styles.summaryText, { color: theme.text }]}>
-                  {itinerary.total_travel_minutes} min travel
-                </Text>
-              </View>
-            </View>
           </>
         ) : (
           <View style={styles.emptyState}>
@@ -345,28 +316,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: fontSizes.body,
     fontWeight: fontWeights.medium,
-  },
-  summaryCard: {
-    alignItems: "center",
-    borderRadius: radious.md,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    minHeight: 52,
-    paddingHorizontal: spacing.sm,
-  },
-  summaryItem: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.xs,
-  },
-  summaryText: {
-    fontSize: fontSizes.caption,
-    fontWeight: fontWeights.medium,
-  },
-  summaryDivider: {
-    backgroundColor: colorPallet.border,
-    height: 24,
-    width: 1,
   },
   footer: {
     borderTopColor: colorPallet.border,
