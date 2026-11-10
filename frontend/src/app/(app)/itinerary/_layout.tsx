@@ -30,7 +30,6 @@ export default function ItineraryLayout() {
           ),
         }}
       />
-      <Stack.Screen name="itinerary" options={{ headerShown: false }} />
     </Stack>
   );
 }
