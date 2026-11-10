@@ -22,9 +22,14 @@ import { useState } from "react";
 import { SymbolView } from "expo-symbols";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ApiClientError } from "@/api/apiClient";
 import type { ItineraryResponse } from "@/itinerary/itinerary.types";
+import {
+  recentItineraryQueryKey,
+  type RecentItinerary,
+} from "@/itinerary/itinerary";
 import { useGenerateItinerary } from "@/hooks/use-generate-itinerary";
 
 const fakeItineraryResponse: ItineraryResponse = {
@@ -146,6 +151,7 @@ type TripPreferencesCreate = {
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const queryClient = useQueryClient();
 
   const [destination, setDestination] = useState("");
   const [startLocation, setStartLocation] = useState("");
@@ -222,11 +228,18 @@ export default function HomeScreen() {
       //const itinerary = await generate.mutateAsync(preferences);
 
       // TEMPORARY CODE FOR NOW. TO TEST
+      const itinerary = fakeItineraryResponse;
+      queryClient.setQueryData<RecentItinerary>(recentItineraryQueryKey, {
+        destination: preferences.destination,
+        tripDate: preferences.trip_date,
+        itinerary,
+      });
+
       router.push({
-        pathname: "/itinerary",
+        pathname: "/(app)/(tabs)/trips",
         params: {
           destination: preferences.destination,
-          itinerary: JSON.stringify(fakeItineraryResponse),
+          itinerary: JSON.stringify(itinerary),
           tripDate: preferences.trip_date,
         },
       } as never);

@@ -1,5 +1,13 @@
 import type { ItineraryResponse } from "@/itinerary/itinerary.types";
 
+export const recentItineraryQueryKey = ["itinerary", "recent"] as const;
+
+export type RecentItinerary = {
+  destination: string;
+  tripDate: string;
+  itinerary: ItineraryResponse;
+};
+
 export function parseItineraryParam(
   value?: string | string[],
 ): ItineraryResponse | null {

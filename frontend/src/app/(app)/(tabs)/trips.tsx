@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
@@ -13,20 +14,27 @@ import {
   spacing,
 } from "@/constants/tokens";
 import { useTheme } from "@/hooks/use-theme";
-import { parseItineraryParam } from "@/itinerary/itinerary";
+import {
+  parseItineraryParam,
+  recentItineraryQueryKey,
+  type RecentItinerary,
+} from "@/itinerary/itinerary";
 
 const placeImages = [
   {
     placeId: 101,
-    imageUrl: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=80",
   },
   {
     placeId: 102,
-    imageUrl: "https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=900&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=900&q=80",
   },
   {
     placeId: 103,
-    imageUrl: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=80",
+    imageUrl:
+      "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=80",
   },
 ];
 
@@ -116,9 +124,20 @@ function getDateLabel(tripDate?: string) {
 export default function TripsScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<ItineraryParams>();
-  const itinerary = parseItineraryParam(params.itinerary);
-  const destination = getParamValue(params.destination) ?? "City, Country";
-  const tripDate = getParamValue(params.tripDate);
+  const { data: recentItinerary } = useQuery<RecentItinerary | null>({
+    queryKey: recentItineraryQueryKey,
+    queryFn: async () => null,
+    initialData: null,
+    staleTime: Infinity,
+  });
+  const itinerary =
+    parseItineraryParam(params.itinerary) ?? recentItinerary?.itinerary ?? null;
+  const destination =
+    getParamValue(params.destination) ??
+    recentItinerary?.destination ??
+    "City, Country";
+  const tripDate =
+    getParamValue(params.tripDate) ?? recentItinerary?.tripDate;
   const stops = itinerary
     ? [...itinerary.stops].sort(
         (first, second) => first.stop_order - second.stop_order,
@@ -319,6 +338,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     borderTopColor: colorPallet.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
     padding: spacing.lg,
   },
   planButton: {
