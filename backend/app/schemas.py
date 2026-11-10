@@ -51,5 +51,6 @@ class ItineraryStop(ItineraryStopCreate):
     id: int
 
 class ItineraryResponse(BaseModel):
+    trip_id: int = Field(gt=0)
     stops : list[ItineraryStopCreate]
     total_travel_minutes: int = Field(ge=0)

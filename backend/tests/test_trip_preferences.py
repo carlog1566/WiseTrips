@@ -32,6 +32,7 @@ def test_generate_trip_returns_itinerary():
 
     response_data = response.json()
 
+    assert isinstance(response_data["trip_id"], int)
     assert "stops" in response_data
     assert "total_travel_minutes" in response_data
     assert response_data["total_travel_minutes"] == 30
