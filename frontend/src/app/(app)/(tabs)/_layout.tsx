@@ -48,6 +48,8 @@ export default function TabsLayout() {
         name="trips"
         options={{
           title: "Trips",
+          headerShown: true,
+          headerTitle: "Itinerary",
           tabBarIcon: ({ focused }) => (
             <SymbolView
               name={{

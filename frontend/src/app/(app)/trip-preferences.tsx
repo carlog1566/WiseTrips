@@ -23,7 +23,7 @@ import { SymbolView } from "expo-symbols";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
 
-import { apiClient, ApiClientError } from "@/api/apiClient";
+import { ApiClientError } from "@/api/apiClient";
 import type { ItineraryResponse } from "@/itinerary/itinerary.types";
 import { useGenerateItinerary } from "@/hooks/use-generate-itinerary";
 
@@ -224,7 +224,11 @@ export default function HomeScreen() {
       // TEMPORARY CODE FOR NOW. TO TEST
       router.push({
         pathname: "/itinerary",
-        params: { itinerary: JSON.stringify(fakeItineraryResponse) },
+        params: {
+          destination: preferences.destination,
+          itinerary: JSON.stringify(fakeItineraryResponse),
+          tripDate: preferences.trip_date,
+        },
       } as never);
     } catch (error) {
       if (error instanceof ApiClientError) {
