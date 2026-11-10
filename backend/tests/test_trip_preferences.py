@@ -47,3 +47,49 @@ def test_generate_trip_rejects_invalid_time():
     )
 
     assert response.status_code == 422
+
+def test_generate_trip_saves_itinerary():
+    response = client.post(
+        "/api/trips/generate",
+        json=VALID_TRIP,
+    )
+
+    assert response.status_code == 200
+
+    response_data = response.json()
+
+    assert response_data["trip_id"] > 0
+    assert len(response_data["stops"]) > 0
+
+    for stop in response_data["stops"]:
+        assert stop["trip_id"] == response_data["trip_id"]
+        assert stop["place_id"] > 0
+        assert stop["stop_order"] > 0
+
+
+def test_get_saved_itinerary():
+    create_response = client.post(
+        "/api/trips/generate",
+        json=VALID_TRIP,
+    )
+
+    assert create_response.status_code == 200
+
+    trip_id = create_response.json()["trip_id"]
+
+    response = client.get(
+        f"/api/trips/{trip_id}"
+    )
+
+    assert response.status_code == 200
+
+    response_data = response.json()
+
+    assert response_data["trip_id"] == trip_id
+    assert len(response_data["stops"]) > 0
+
+
+def test_get_missing_itinerary_returns_404():
+    response = client.get("/api/trips/999999")
+
+    assert response.status_code == 404
