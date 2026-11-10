@@ -8,7 +8,7 @@ import { SymbolView } from "expo-symbols";
 import { useTheme } from "@/hooks/use-theme";
 import { colorPallet, fontSizes, fontWeights, radious, spacing } from "@/constants/tokens";
 import {
-  recentItineraryQueryKey,
+  createItineraryQueryKey,
   type RecentItinerary,
 } from "@/itinerary/itinerary";
 const imagePlaceholder = require("@/assets/images/placeholder.png");
@@ -99,7 +99,7 @@ function DestinationImage({
 export default function HomeScreen() {
   const theme = useTheme();
   const { data: recentItinerary } = useQuery<RecentItinerary | null>({
-    queryKey: recentItineraryQueryKey,
+    queryKey: createItineraryQueryKey("recent"),
     queryFn: async () => null,
     initialData: null,
     staleTime: Infinity,

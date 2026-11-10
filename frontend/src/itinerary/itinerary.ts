@@ -1,6 +1,12 @@
 import type { ItineraryResponse } from "@/itinerary/itinerary.types";
 
-export const recentItineraryQueryKey = ["itinerary", "recent"] as const;
+export const itineraryQueryKey = ["itinerary"] as const;
+
+export function createItineraryQueryKey<const T extends readonly unknown[]>(
+  ...parts: T
+) {
+  return [...itineraryQueryKey, ...parts] as const;
+}
 
 export type RecentItinerary = {
   destination: string;

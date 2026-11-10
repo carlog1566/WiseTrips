@@ -16,7 +16,7 @@ import {
 import { useTheme } from "@/hooks/use-theme";
 import {
   parseItineraryParam,
-  recentItineraryQueryKey,
+  createItineraryQueryKey,
   type RecentItinerary,
 } from "@/itinerary/itinerary";
 
@@ -125,7 +125,7 @@ export default function TripsScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<ItineraryParams>();
   const { data: recentItinerary } = useQuery<RecentItinerary | null>({
-    queryKey: recentItineraryQueryKey,
+    queryKey: createItineraryQueryKey("recent"),
     queryFn: async () => null,
     initialData: null,
     staleTime: Infinity,

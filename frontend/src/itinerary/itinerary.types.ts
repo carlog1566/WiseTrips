@@ -10,6 +10,10 @@ export type TripPreferencesCreate = {
   pace: string;
 };
 
+export type TripPreferencesResponse = TripPreferencesCreate & {
+  id: number;
+};
+
 export type Place = {
   id: number;
   name: string;
@@ -31,6 +35,7 @@ export type ItineraryStop = {
 };
 
 export type ItineraryResponse = {
+  trip_id: number;
   stops: ItineraryStop[];
   total_travel_minutes: number;
 };
