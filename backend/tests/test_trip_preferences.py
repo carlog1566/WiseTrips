@@ -7,18 +7,15 @@ client = TestClient(app)
 
 
 VALID_TRIP = {
-    "destination": "Tokyo",
+    "destination": "Los Angeles",
     "trip_date": "2026-11-03",
-    "starting_location": "Shibuya Station",
+    "starting_location": "Downtown Los Angeles",
     "start_time": "09:00:00",
-    "end_time": "18:00:00",
-    "budget": 15000,
-    "transportation_mode": "walking",
-    "interests": [
-        "food",
-        "culture",
-    ],
-    "pace": "moderate",
+    "end_time": "17:00:00",
+    "budget": 100,
+    "transportation_mode": "driving",
+    "interests": ["Attraction"],
+    "pace": "slow",
 }
 
 
