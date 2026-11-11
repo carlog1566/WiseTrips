@@ -22,45 +22,9 @@ import { useState } from "react";
 import { SymbolView } from "expo-symbols";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { ApiClientError } from "@/api/apiClient";
-import type { ItineraryResponse } from "@/itinerary/itinerary.types";
-import {
-  recentItineraryQueryKey,
-  type RecentItinerary,
-} from "@/itinerary/itinerary";
 import { useGenerateItinerary } from "@/hooks/use-generate-itinerary";
-
-const fakeItineraryResponse: ItineraryResponse = {
-  stops: [
-    {
-      id: 1,
-      trip_id: 1,
-      place_id: 101,
-      stop_order: 1,
-      arrival_time: "09:00:00",
-      departure_time: "10:00:00",
-    },
-    {
-      id: 2,
-      trip_id: 1,
-      place_id: 102,
-      stop_order: 2,
-      arrival_time: "10:15:00",
-      departure_time: "11:45:00",
-    },
-    {
-      id: 3,
-      trip_id: 1,
-      place_id: 103,
-      stop_order: 3,
-      arrival_time: "12:00:00",
-      departure_time: "13:00:00",
-    },
-  ],
-  total_travel_minutes: 30,
-};
 
 const transportationOptions = [
   {
@@ -151,7 +115,6 @@ type TripPreferencesCreate = {
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const queryClient = useQueryClient();
 
   const [destination, setDestination] = useState("");
   const [startLocation, setStartLocation] = useState("");
@@ -166,12 +129,18 @@ export default function HomeScreen() {
     useState<TransportationMethod>("walking");
   const [interests, setInterests] = useState<Interest[]>([]);
   const [pace, setPace] = useState<Pace>("relaxed");
-  const [error, setError] = useState("");
+  const [validationError, setValidationError] = useState("");
 
   const generate = useGenerateItinerary();
+  const mutationError =
+    generate.error instanceof ApiClientError
+      ? generate.error.details
+      : generate.error?.message;
+  const errorMessage = validationError || mutationError;
 
-  const onPress = async () => {
-    setError("");
+  const onPress = () => {
+    setValidationError("");
+    generate.reset();
 
     const startsAt = new Date(tripDate);
     startsAt.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
@@ -180,19 +149,19 @@ export default function HomeScreen() {
     const parsedBudget = Number(budget);
 
     if (startsAt.getTime() <= Date.now()) {
-      setError(
+      setValidationError(
         "Please choose a future start date and time. For today, the start time must be later than the current time.",
       );
       return;
     }
 
     if (endsAt.getTime() <= startsAt.getTime()) {
-      setError("End time must be later than start time.");
+      setValidationError("End time must be later than start time.");
       return;
     }
 
     if (interests.length === 0) {
-      setError("Please select at least one interest.");
+      setValidationError("Please select at least one interest.");
       return;
     }
 
@@ -206,7 +175,7 @@ export default function HomeScreen() {
       !Number.isFinite(parsedBudget) ||
       parsedBudget < 0
     ) {
-      setError("Please fill in all fields correctly.");
+      setValidationError("Please fill in all fields correctly.");
       return;
     }
 
@@ -224,32 +193,16 @@ export default function HomeScreen() {
       pace,
     };
 
-    try {
-      //const itinerary = await generate.mutateAsync(preferences);
-
-      // TEMPORARY CODE FOR NOW. TO TEST
-      const itinerary = fakeItineraryResponse;
-      queryClient.setQueryData<RecentItinerary>(recentItineraryQueryKey, {
-        destination: preferences.destination,
-        tripDate: preferences.trip_date,
-        itinerary,
-      });
-
-      router.push({
-        pathname: "/(app)/(tabs)/trips",
-        params: {
-          destination: preferences.destination,
-          itinerary: JSON.stringify(itinerary),
-          tripDate: preferences.trip_date,
-        },
-      } as never);
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        setError(error.details);
-      } else {
-        setError("Error sending data to backend");
-      }
-    }
+    generate.mutate(preferences, {
+      onSuccess: (itinerary) => {
+        router.replace({
+          pathname: "/(app)/itinerary",
+          params: {
+            trip_id: itinerary.trip_id,
+          },
+        });
+      },
+    });
   };
 
   const [btnScale] = useState(() => new Animated.Value(1));
@@ -587,9 +540,9 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {error ? (
+      {errorMessage ? (
         <Text accessibilityRole="alert" style={styles.errorText}>
-          {error}
+          {errorMessage}
         </Text>
       ) : null}
 
