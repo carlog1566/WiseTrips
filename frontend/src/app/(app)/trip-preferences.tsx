@@ -10,6 +10,7 @@ import {
   Keyboard,
   ActivityIndicator,
 } from "react-native";
+import { router } from "expo-router";
 import {
   fontSizes,
   spacing,
@@ -22,7 +23,8 @@ import { SymbolView } from "expo-symbols";
 import DateTimePicker from "@expo/ui/community/datetime-picker";
 import CustomTextInput from "@/components/text-input";
 
-import { apiClient, ApiClientError } from "@/api/apiClient";
+import { ApiClientError } from "@/api/apiClient";
+import { useGenerateItinerary } from "@/hooks/use-generate-itinerary";
 
 const transportationOptions = [
   {
@@ -127,12 +129,18 @@ export default function HomeScreen() {
     useState<TransportationMethod>("walking");
   const [interests, setInterests] = useState<Interest[]>([]);
   const [pace, setPace] = useState<Pace>("relaxed");
-  const [error, setError] = useState("");
-  const [isGenerating, setGenerating] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
-  const onPress = async () => {
-    setError("");
-    setGenerating(true);
+  const generate = useGenerateItinerary();
+  const mutationError =
+    generate.error instanceof ApiClientError
+      ? generate.error.details
+      : generate.error?.message;
+  const errorMessage = validationError || mutationError;
+
+  const onPress = () => {
+    setValidationError("");
+    generate.reset();
 
     const startsAt = new Date(tripDate);
     startsAt.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
@@ -141,22 +149,19 @@ export default function HomeScreen() {
     const parsedBudget = Number(budget);
 
     if (startsAt.getTime() <= Date.now()) {
-      setError(
+      setValidationError(
         "Please choose a future start date and time. For today, the start time must be later than the current time.",
       );
-      setGenerating(false);
       return;
     }
 
     if (endsAt.getTime() <= startsAt.getTime()) {
-      setError("End time must be later than start time.");
-      setGenerating(false);
+      setValidationError("End time must be later than start time.");
       return;
     }
 
     if (interests.length === 0) {
-      setError("Please select at least one interest.");
-      setGenerating(false);
+      setValidationError("Please select at least one interest.");
       return;
     }
 
@@ -170,8 +175,7 @@ export default function HomeScreen() {
       !Number.isFinite(parsedBudget) ||
       parsedBudget < 0
     ) {
-      setError("Please fill in all fields correctly.");
-      setGenerating(false);
+      setValidationError("Please fill in all fields correctly.");
       return;
     }
 
@@ -189,22 +193,16 @@ export default function HomeScreen() {
       pace,
     };
 
-    try {
-      const itinerary = await apiClient.post<unknown, TripPreferencesCreate>(
-        "/api/trips/generate",
-        preferences,
-      );
-
-      console.log(itinerary);
-    } catch (error) {
-      if (error instanceof ApiClientError) {
-        setError(error.details);
-      } else {
-        setError("Error sending data to backend");
-      }
-    } finally {
-      setGenerating(false);
-    }
+    generate.mutate(preferences, {
+      onSuccess: (itinerary) => {
+        router.replace({
+          pathname: "/(app)/itinerary",
+          params: {
+            trip_id: itinerary.trip_id,
+          },
+        });
+      },
+    });
   };
 
   const [btnScale] = useState(() => new Animated.Value(1));
@@ -542,9 +540,9 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {error ? (
+      {errorMessage ? (
         <Text accessibilityRole="alert" style={styles.errorText}>
-          {error}
+          {errorMessage}
         </Text>
       ) : null}
 
@@ -554,14 +552,14 @@ export default function HomeScreen() {
           onPress={onPress}
           onPressIn={pressIn}
           onPressOut={pressOut}
-          disabled={isGenerating}
+          disabled={generate.isPending}
           style={({ pressed }) => [
             styles.generateButton,
             { backgroundColor: theme.primary },
             pressed && { opacity: 0.7 },
           ]}
         >
-          {!isGenerating ? (
+          {!generate.isPending ? (
             <Text style={styles.generateButtonText}>Generate Itinerary</Text>
           ) : (
             <ActivityIndicator color={"white"} />

@@ -1,4 +1,5 @@
-import { router, useLocalSearchParams } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { Image } from "expo-image";
 import { useState } from "react";
 import type { StyleProp, ImageStyle } from "react-native";
@@ -6,6 +7,10 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import { SymbolView } from "expo-symbols";
 import { useTheme } from "@/hooks/use-theme";
 import { colorPallet, fontSizes, fontWeights, radious, spacing } from "@/constants/tokens";
+import {
+  createItineraryQueryKey,
+  type RecentItinerary,
+} from "@/itinerary/itinerary";
 const imagePlaceholder = require("@/assets/images/placeholder.png");
 
 const featuredGuides = [
@@ -52,20 +57,19 @@ const popularTrips = [
   },
 ];
 
-type RecentItinerary = {
-  destination: string;
-  dates: string;
-  imageUrl: string;
-};
+function formatRecentDate(tripDate: string) {
+  const date = new Date(`${tripDate}T00:00:00`);
 
-const useMockRecentItinerary = false;
-const recentItinerary: RecentItinerary | null = useMockRecentItinerary
-  ? {
-      destination: "New York, USA",
-      dates: "Oct 23 - Oct 27, 2024",
-      imageUrl: featuredGuides[0].imageUrl,
-    }
-  : null;
+  if (Number.isNaN(date.getTime())) {
+    return tripDate;
+  }
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 function DestinationImage({
   uri,
@@ -94,6 +98,27 @@ function DestinationImage({
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const { data: recentItinerary } = useQuery<RecentItinerary | null>({
+    queryKey: createItineraryQueryKey("recent"),
+    queryFn: async () => null,
+    initialData: null,
+    staleTime: Infinity,
+  });
+
+  function openRecentItinerary() {
+    if (!recentItinerary) {
+      return;
+    }
+
+    router.push({
+      pathname: "/itinerary",
+      params: {
+        destination: recentItinerary.destination,
+        itinerary: JSON.stringify(recentItinerary.itinerary),
+        tripDate: recentItinerary.tripDate,
+      },
+    } as never);
+  }
 
   return (
     <ScrollView 
@@ -115,33 +140,41 @@ export default function HomeScreen() {
       {recentItinerary ? (
         <>
           <View style={styles.sectionHeading}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Your Plan</Text>
-            <Text style={[styles.seeAll, { color: theme.primary }]}>See all</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Continue planning</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See all itineraries"
+              onPress={() => router.navigate("/(app)/(tabs)/trips")}
+            >
+              <Text style={[styles.seeAll, { color: theme.primary }]}>See all</Text>
+            </Pressable>
           </View>
 
           <Pressable 
             accessibilityRole="button" 
             accessibilityLabel={`Continue planning your trip to ${recentItinerary.destination}`} 
-            onPress={() => router.navigate("/(app)/trip-preferences")} 
+            onPress={openRecentItinerary}
             style={({ pressed }) => [
               styles.continueCard, 
-              { backgroundColor: theme.primaryBackground }, 
               pressed && styles.pressed
             ]}
           >
             <DestinationImage 
-              uri={recentItinerary.imageUrl} 
+              uri={featuredGuides[0].imageUrl} 
               accessibilityLabel={`${recentItinerary.destination} destination`} 
-              style={styles.destinationArt} 
+              style={StyleSheet.absoluteFill} 
             />
+            <View style={styles.continueCardOverlay} />
             
             <View style={styles.continueCopy}>
-              <Text style={[styles.cardKicker, { color: colorPallet.muted }]}>Continue planning</Text>
-              <Text style={[styles.continueTitle, { color: theme.text }]}>{recentItinerary.destination}</Text>
-              <Text style={[styles.cardMeta, { color: colorPallet.muted }]}>{recentItinerary.dates}</Text>
+              <Text style={[styles.cardKicker, styles.continueCardText]}>Travel to</Text>
+              <Text style={[styles.continueTitle, styles.continueCardText]}>{recentItinerary.destination}</Text>
+              <Text style={[styles.cardMeta, styles.continueCardText]}>
+                {formatRecentDate(recentItinerary.tripDate)}
+              </Text>
             </View>
 
-            <SymbolView name={{ ios: "chevron.right", android: "chevron_right" }} size={20} tintColor={theme.primary} />
+            <SymbolView name={{ ios: "chevron.right", android: "chevron_right" }} size={20} tintColor="#FFFFFF" />
           </Pressable>
         </>
       ) : (
@@ -284,14 +317,16 @@ const styles = StyleSheet.create({
     borderRadius: radious.md, 
     padding: spacing.xs, 
     flexDirection: "row", alignItems: "center", 
-    gap: spacing.sm 
+    gap: spacing.sm,
+    overflow: "hidden",
+    position: "relative",
   },
-  destinationArt: { 
-    width: 84, 
-    height: 80, 
-    borderRadius: radious.sm, 
-    alignItems: "center", 
-    justifyContent: "center" 
+  continueCardOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  continueCardText: {
+    color: "#FFFFFF",
   },
   artText: { 
     color: "#1A5D67", 
