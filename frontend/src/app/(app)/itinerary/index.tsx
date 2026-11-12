@@ -115,8 +115,8 @@ function getPlaceName(stop: ItineraryStop) {
   return `Place ${stop.place_id}`;
 }
 
-function getPlaceHours(stop: ItineraryStop) {
-  return `Open ${formatTime(stop.arrival_time)} - ${formatTime(stop.departure_time)}`;
+function getVisitHours(stop: ItineraryStop) {
+  return `Visit ${formatTime(stop.arrival_time)} - ${formatTime(stop.departure_time)}`;
 }
 
 export default function ItineraryDetailScreen() {
@@ -357,7 +357,7 @@ export default function ItineraryDetailScreen() {
                     {getPlaceName(stop)}
                   </Text>
                   <Text style={[styles.placeMeta, { color: theme.text }]}>
-                    {getPlaceHours(stop)}
+                    {getVisitHours(stop)}
                   </Text>
                   {index < stops.length - 1 && (
                     <View style={styles.travelRow}>

@@ -154,7 +154,7 @@ export default function TripsScreen() {
     }
 
     router.push({
-      pathname: "/itinerary/itinerary",
+      pathname: "/itinerary",
       params: {
         destination,
         itinerary: JSON.stringify(itinerary),

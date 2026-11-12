@@ -111,7 +111,7 @@ export default function HomeScreen() {
     }
 
     router.push({
-      pathname: "/itinerary/itinerary",
+      pathname: "/itinerary",
       params: {
         destination: recentItinerary.destination,
         itinerary: JSON.stringify(recentItinerary.itinerary),
