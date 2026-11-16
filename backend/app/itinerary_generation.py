@@ -2,7 +2,7 @@ from .schemas import Place, TripPreferencesCreate, ItineraryResponse, ItineraryS
 from .place_discovery import discover_places
 from .place_recommendation import recommend_places
 from datetime import date, time
-from .travel_time_estimation import travel_time_estimation
+from .travel_time_estimation import RouteUnavailableError, travel_time_estimation
 from dotenv import load_dotenv # For testing
 import os # For testing
 
@@ -29,8 +29,8 @@ def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPrefe
 
     # Select up to 3 stops when there are at most 5 candidates, otherwise up to 5.
     list_length = len(places)
-    if list_length <= 0:
-        raise ValueError("Invalid or no place count")
+    if list_length == 0:
+        raise ValueError("Invalid place count or no suitable destinations")
     elif list_length <= 5:
         max_stops = 3
     else:
@@ -58,10 +58,13 @@ def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPrefe
             time_at_place = int(time_at_place * 0.75)
 
         # Calculate estimated time to travel to location
-        travel_time_details = travel_time_estimation(
-            previous_place, place, preferences.transportation_mode, api_key
-        )
-        print(travel_time_details)
+        try:
+            travel_time_details = travel_time_estimation(
+                previous_place, place, preferences.transportation_mode, api_key
+            )
+        except RouteUnavailableError:
+            continue
+
         time_travelling = travel_time_details["duration"]
 
         # Check time availability with time travelled, spent at location, and already spent in trip
@@ -91,7 +94,7 @@ def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPrefe
             departure_time=estimated_departure))
         previous_place = place
         
-
+    if len(itinerary_stops) == 0: raise ValueError("No suitable destinations or routes cannot be retrieved")
     return ItineraryResponse(trip_id=trip_id, stops=itinerary_stops, total_travel_minutes=estimated_total_time)
 
 def test():

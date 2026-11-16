@@ -1,7 +1,9 @@
 import requests
-import os
-from dotenv import load_dotenv # For testing
 from .schemas import PlaceCreate
+
+class RouteUnavailableError(Exception):
+    pass
+    """Raised when the Routes API cannot find a route between locations."""
 
 def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel_type: str, api_key: str):
     # Routes API url
@@ -29,9 +31,9 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
                 }
             }
         },
-        "destination" : {
-            "location" : {
-                "latLng" : {
+        "destination": {
+            "location": {
+                "latLng": {
                     "latitude": destination.latitude,
                     "longitude": destination.longitude
                 }
@@ -40,7 +42,7 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
         "travelMode": travel_mode
     }
 
-    response = requests.post(routes_url, json=payload, headers=headers)
+    response = requests.post(routes_url, json=payload, headers=headers, timeout=10)
     # For testing without API key (debug stuff not requiring this function but not the API key)
     """if response.status_code == 400:
         return {"distance" : 1, "duration": 1}"""
@@ -61,5 +63,4 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
             "distance": miles,
             "duration": minutes
         } 
-    else:
-        raise ValueError("Cannot provide route between locations")
+    raise RouteUnavailableError("Cannot provide route between locations")
