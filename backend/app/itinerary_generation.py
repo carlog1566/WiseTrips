@@ -24,7 +24,8 @@ def generate_itinerary(trip_id: int, preferences: TripPreferencesCreate, origin:
     estimated_total_time = 0
     current_budget = 0
     itinerary_stops = []
-    category_count_map = {}
+    category_count_map = {} # Track place type count
+    previous_place = origin # Estimate travel time between place in current iteration and last tracked location
 
     # Discover and recommend places
     discovered_places = discover_places(preferences)
@@ -40,7 +41,6 @@ def generate_itinerary(trip_id: int, preferences: TripPreferencesCreate, origin:
         max_stops = 5
 
     for i, place in enumerate(recommended_places):
-       
         if len(itinerary_stops) >= max_stops:
             break
         
@@ -62,18 +62,19 @@ def generate_itinerary(trip_id: int, preferences: TripPreferencesCreate, origin:
             time_at_place = int(time_at_place * 0.75)
 
         # Calculate estimated time to travel to location
-        if i == 0:
-            # For user origin, retrieve from parameter for now
-            travel_time_details = travel_time_estimation(origin, place, preferences.transportation_mode, api_key)
-        else:
-            travel_time_details = travel_time_estimation(itinerary_stops[i-1], place, preferences.transportation_mode, api_key)
-        time_travelling = travel_time_details["minutes"]
+        travel_time_details = travel_time_estimation(
+            previous_place, place, preferences.transportation_mode, api_key
+        )
+        print(travel_time_details)
+        time_travelling = travel_time_details["duration"]
 
-        if time_travelling + time_at_place + estimated_total_time > time_available > time_available:
+        # Check time availability with time travelled, spent at location, and already spent in trip
+        if time_travelling + time_at_place + estimated_total_time > time_available:
             continue
         
         # Add place to map of current place types and add budget to total budget after all checks
         category_count_map[category] = category_count_map.get(category, 0) + 1
+        # Implement as plus feature?: check each type, like for food, check if restaurants and pick 1 or save type or for later
         current_budget += place.estimated_cost
 
         # Convert time in minutes for arrival and departure into datetime time format
@@ -92,6 +93,7 @@ def generate_itinerary(trip_id: int, preferences: TripPreferencesCreate, origin:
             stop_order=len(itinerary_stops) + 1, 
             arrival_time=estimated_arrival, 
             departure_time=estimated_departure))
+        previous_place = place
         
 
     return ItineraryResponse(trip_id=trip_id, stops=itinerary_stops, total_travel_minutes=estimated_total_time)

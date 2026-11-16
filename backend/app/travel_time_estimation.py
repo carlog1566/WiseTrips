@@ -32,7 +32,7 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
         "destination" : {
             "location" : {
                 "latLng" : {
-                    "latidude": destination.latitude,
+                    "latitude": destination.latitude,
                     "longitude": destination.longitude
                 }
             }
@@ -41,6 +41,9 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
     }
 
     response = requests.post(routes_url, json=payload, headers=headers)
+    # For testing without API key (debug stuff not requiring this function but not the API key)
+    """if response.status_code == 400:
+        return {"distance" : 1, "duration": 1}"""
     response.raise_for_status()
 
     data = response.json()
