@@ -1,7 +1,10 @@
-from .schemas import Place, TripPreferencesCreate, ItineraryResponse, ItineraryStopCreate
+from .schemas import Place, TripPreferencesCreate, ItineraryResponse, ItineraryStopCreate, PlaceCreate
 from .place_discovery import discover_places
 from .place_recommendation import recommend_places
 from datetime import date, time
+from .travel_time_estimation import travel_time_estimation
+from dotenv import load_dotenv # For testing
+import os # For testing
 
 # Hardcoded time estimate for place
 def estimate_place_time(place: Place) -> int:
@@ -14,17 +17,21 @@ def estimate_place_time(place: Place) -> int:
     else:
         return 60
 
-def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPreferencesCreate) -> ItineraryResponse:
+def generate_itinerary(trip_id: int, preferences: TripPreferencesCreate, origin: PlaceCreate, api_key: str) -> ItineraryResponse:
     starting_time = preferences.start_time.hour * 60 + preferences.start_time.minute
     ending_time = preferences.end_time.hour * 60 + preferences.end_time.minute
     time_available = (ending_time - starting_time)
-    estimated_travel_time = 0
+    estimated_total_time = 0
     current_budget = 0
     itinerary_stops = []
     category_count_map = {}
 
+    # Discover and recommend places
+    discovered_places = discover_places(preferences)
+    recommended_places = recommend_places(discovered_places, preferences)
+
     # Select up to 3 stops when there are at most 5 candidates, otherwise up to 5.
-    list_length = len(places)
+    list_length = len(recommended_places)
     if list_length <= 0:
         raise ValueError("Invalid or no place count")
     elif list_length <= 5:
@@ -32,11 +39,19 @@ def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPrefe
     else:
         max_stops = 5
 
-    for i, place in enumerate(places):
-        category = place.category
-
+    for i, place in enumerate(recommended_places):
+       
         if len(itinerary_stops) >= max_stops:
             break
+        
+        # If there are more than 2 places of the same category, skip the remaining places of same category
+        category = place.category
+        if category_count_map.get(category, 0) >= 2:
+            continue
+        
+        # Check next place budget constraints
+        if place.estimated_cost + current_budget > preferences.budget:
+            continue
 
         time_at_place = estimate_place_time(place)
 
@@ -46,23 +61,27 @@ def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPrefe
         elif preferences.pace == "fast":
             time_at_place = int(time_at_place * 0.75)
 
-        # Check next place can fit within time and budget constraints
-        if (estimated_travel_time + time_at_place > time_available) or (place.estimated_cost + current_budget > preferences.budget):
-            continue
+        # Calculate estimated time to travel to location
+        if i == 0:
+            # For user origin, retrieve from parameter for now
+            travel_time_details = travel_time_estimation(origin, place, preferences.transportation_mode, api_key)
+        else:
+            travel_time_details = travel_time_estimation(itinerary_stops[i-1], place, preferences.transportation_mode, api_key)
+        time_travelling = travel_time_details["minutes"]
 
-        # If there are more than 2 places of the same category, skip the remaining places of same category
-        if category_count_map.get(category, 0) >= 2:
+        if time_travelling + time_at_place + estimated_total_time > time_available > time_available:
             continue
-
+        
+        # Add place to map of current place types and add budget to total budget after all checks
         category_count_map[category] = category_count_map.get(category, 0) + 1
-
         current_budget += place.estimated_cost
 
         # Convert time in minutes for arrival and departure into datetime time format
-        arrival_hours, arrival_minutes = divmod(starting_time + estimated_travel_time, 60)
+        estimated_total_time += time_travelling
+        arrival_hours, arrival_minutes = divmod(starting_time + estimated_total_time, 60)
         arrival_hours %= 24
-        estimated_travel_time += time_at_place
-        departure_hours, departure_minutes = divmod(starting_time + estimated_travel_time, 60)
+        estimated_total_time += time_at_place
+        departure_hours, departure_minutes = divmod(starting_time + estimated_total_time, 60)
         departure_hours %= 24
         estimated_arrival = time(hour=arrival_hours, minute=arrival_minutes)
         estimated_departure = time(hour=departure_hours, minute=departure_minutes)
@@ -75,9 +94,14 @@ def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPrefe
             departure_time=estimated_departure))
         
 
-    return ItineraryResponse(trip_id=trip_id, stops=itinerary_stops, total_travel_minutes=estimated_travel_time)
+    return ItineraryResponse(trip_id=trip_id, stops=itinerary_stops, total_travel_minutes=estimated_total_time)
 
 def test():
+    load_dotenv()
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        raise ValueError("No API Key Found.")
+
     preferences = TripPreferencesCreate(
             destination = "Los Angeles",
             trip_date = date(2026, 11, 1),
@@ -85,27 +109,28 @@ def test():
             start_time = time(9, 0),
             end_time = time(17,0),
             budget = 70.00,
-            transportation_mode = "driving",
+            transportation_mode = "DRIVE ",
             interests = ["Attraction", "Food"], # can change interests, which should change printed results
             pace = "slow",
         )
-    print("Discovered Places:")
-    places = discover_places(preferences)
-    for place in places:
-         print(f"- {place.name}, ID: {place.id}")
-    print("")
+    # Hardcoded user origin example
+    user_origin = PlaceCreate(
+        name = "Cal Poly Pomona",
+        address ="3801 W Temple Ave, Pomona, CA 91768",
+        latitude = 34.058369,
+        longitude = -117.820009,
+        category = "Education",
+        rating = 4.6,
+        estimated_cost = 20000)
 
-    print("Recommended Places:")
-    recommended_places = recommend_places(places, preferences)
-    for place in recommended_places:
-        print(f"{place.name} , ID: {place.id}, Category: {place.category}")
-    print("")
-
-    results = generate_itinerary(1, recommended_places, preferences)
-    print("Itinerary Generation:")
-    for place in results.stops:
-        print(f"ID: {place.place_id}, {place.arrival_time} - {place.departure_time}")
-    print(f"Estimated Travel Time (Minutes): {results.total_travel_minutes}")
+    try:
+        results = generate_itinerary(1, preferences, user_origin, api_key)
+        print("Itinerary Generation:")
+        for place in results.stops:
+            print(f"ID: {place.place_id}, {place.arrival_time} - {place.departure_time}")
+        print(f"Estimated Travel Time (Minutes): {results.total_travel_minutes}")
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     test()
