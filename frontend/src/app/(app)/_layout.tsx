@@ -13,26 +13,13 @@ export default function AppLayout() {
           headerTintColor: "black",
         }}
       />
+      <Stack.Screen
+        name="itinerary"
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
     </Stack>
   );
 }
-
-// options={{
-//           headerShown: true,
-//           headerTitle: word,
-//           headerRight: () => (
-//             <Pressable
-//               onPress={confirmDelete}
-//               hitSlop={12}
-//               accessibilityRole="button"
-//               accessibilityLabel="Remove word"
-//               style={({ pressed }) => [
-//                 styles.headerBtn,
-//                 styles.headerBtnRight,
-//                 pressed && styles.pressedDim,
-//               ]}
-//             >
-//               <TrashIcon color={colors.textMuted} />
-//             </Pressable>
-//           ),
-//         }}
