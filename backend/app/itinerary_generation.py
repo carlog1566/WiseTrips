@@ -17,7 +17,7 @@ def estimate_place_time(place: Place) -> int:
     else:
         return 60
 
-def generate_itinerary(trip_id: int, preferences: TripPreferencesCreate, origin: PlaceCreate, api_key: str) -> ItineraryResponse:
+def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPreferencesCreate, origin: PlaceCreate, api_key: str) -> ItineraryResponse:
     starting_time = preferences.start_time.hour * 60 + preferences.start_time.minute
     ending_time = preferences.end_time.hour * 60 + preferences.end_time.minute
     time_available = (ending_time - starting_time)
@@ -27,12 +27,8 @@ def generate_itinerary(trip_id: int, preferences: TripPreferencesCreate, origin:
     category_count_map = {} # Track place type count
     previous_place = origin # Estimate travel time between place in current iteration and last tracked location
 
-    # Discover and recommend places
-    discovered_places = discover_places(preferences)
-    recommended_places = recommend_places(discovered_places, preferences)
-
     # Select up to 3 stops when there are at most 5 candidates, otherwise up to 5.
-    list_length = len(recommended_places)
+    list_length = len(places)
     if list_length <= 0:
         raise ValueError("Invalid or no place count")
     elif list_length <= 5:
@@ -40,7 +36,7 @@ def generate_itinerary(trip_id: int, preferences: TripPreferencesCreate, origin:
     else:
         max_stops = 5
 
-    for i, place in enumerate(recommended_places):
+    for i, place in enumerate(places):
         if len(itinerary_stops) >= max_stops:
             break
         
@@ -126,7 +122,9 @@ def test():
         estimated_cost = 20000)
 
     try:
-        results = generate_itinerary(1, preferences, user_origin, api_key)
+        discovered_places = discover_places(preferences)
+        recommended_places = recommend_places(discovered_places, preferences)
+        results = generate_itinerary(1, recommended_places, preferences, user_origin, api_key)
         print("Itinerary Generation:")
         for place in results.stops:
             print(f"ID: {place.place_id}, {place.arrival_time} - {place.departure_time}")
