@@ -13,7 +13,7 @@ def estimate_activity_duration(place: Place) -> int:
             "food": 60,
             "nature": 60,
             "shopping": 90,
-            "museum": 105,
+            "museums": 105,
             "entertainment": 120
     }
     return activities.get(_normalise(place.category), 60)
@@ -112,7 +112,7 @@ def test():
             end_time = time(17,0),
             budget = 70.00,
             transportation_mode = "car",
-            interests = ["Museum", "Food"], # can change interests, which should change printed results
+            interests = ["Museums", "Food"], # can change interests, which should change printed results
             pace = "relaxed",
         )
     # Hardcoded user origin example

@@ -3,8 +3,12 @@ from .schemas import PlaceCreate
 import math
 
 class RouteUnavailableError(Exception):
-    pass
     """Raised when the Routes API cannot find a route between locations."""
+    pass
+
+class RoutingAPIError(Exception):
+    """Raised when a routing API request fails."""
+    pass
 
 def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel_type: str, api_key: str):
     # Routes API url
@@ -14,6 +18,7 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
         "walking": "WALK",
         "publicTransit": "TRANSIT",
         "car": "DRIVE",
+        "rideshare": "DRIVE",
         }
     
     travel_mode = travel_modes.get(travel_type)
