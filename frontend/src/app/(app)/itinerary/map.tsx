@@ -1,7 +1,7 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import MapView, { Callout, Marker, Polyline, PROVIDER_DEFAULT, UrlTile, } from "react-native-maps";
+import MapView, { Callout, Marker, Polyline, PROVIDER_DEFAULT, PROVIDER_GOOGLE } from "react-native-maps";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, Platform, } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, Platform } from "react-native";
 import { colorPallet, fontSizes, fontWeights, radious, spacing } from "@/constants/tokens";
 import { useItinerary } from "@/hooks/use-itinerary";
 import { useTheme } from "@/hooks/use-theme";
@@ -196,8 +196,7 @@ export default function ItineraryMapScreen() {
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFill}
-          provider={Platform.OS === "ios" ? PROVIDER_DEFAULT : undefined}
-          mapType={Platform.OS === "android" ? "none" : "standard"}
+          provider={Platform.OS === "android" ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
           initialRegion={{
             ...previewStartingCoordinate,
             latitudeDelta: 0.08,
