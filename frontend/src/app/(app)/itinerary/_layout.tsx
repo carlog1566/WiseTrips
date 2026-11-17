@@ -9,8 +9,11 @@ export default function ItineraryLayout() {
         name="index"
         options={{
           headerShown: true,
+          headerTransparent: true,
           headerTitle: "Itinerary",
           headerTintColor: "black",
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: "rgba(255, 255, 255, 0.12)" },
           headerLeft: () => (
             <Pressable
               onPress={() => router.dismissTo("/(app)/(tabs)")}

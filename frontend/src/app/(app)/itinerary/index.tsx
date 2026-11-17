@@ -28,6 +28,55 @@ import { useTripPreferences } from "@/hooks/use-trip-preferences";
 
 const itineraryTabs = ["Itinerary", "Explore", "Budget", "Map"] as const;
 
+// START: Temporary Itinerary Preview
+// When the backend is ready, remove this temporary block and 
+// restore the backend data assignment below. Do not remove the hooks or API code.
+const temporaryItinerary: ItineraryResponse = {
+  trip_id: 1,
+  stops: [
+    {
+      id: 1,
+      trip_id: 1,
+      place_id: 101,
+      stop_order: 1,
+      arrival_time: "09:00:00",
+      departure_time: "10:00:00",
+    },
+    {
+      id: 2,
+      trip_id: 1,
+      place_id: 102,
+      stop_order: 2,
+      arrival_time: "10:15:00",
+      departure_time: "11:45:00",
+    },
+    {
+      id: 3,
+      trip_id: 1,
+      place_id: 103,
+      stop_order: 3,
+      arrival_time: "12:00:00",
+      departure_time: "13:00:00",
+    },
+  ],
+  total_travel_minutes: 30,
+};
+
+const temporaryTripPreferences: TripPreferencesResponse = {
+  id: 1,
+  destination: "New York, USA",
+  trip_date: "2024-10-23",
+  starting_location: "Times Square, New York",
+  start_time: "09:00:00",
+  end_time: "18:00:00",
+  budget: 1000,
+  transportation_mode: "car",
+  interests: ["food", "culture"],
+  pace: "Relaxed",
+};
+
+// END: Temporary Itinerary Preview
+
 const travelEstimates = [
   {
     minutes: 18,
@@ -126,19 +175,26 @@ export default function ItineraryDetailScreen() {
   const tripId = Number(trip_id);
 
   const {
-    data: itinerary,
+    data: itineraryFromBackend, // itinerary (backend) to itineraryFromBackend (temporary)
     isPending: itineraryIsPending,
     error: itineraryError,
     refetch: itineraryRefetch,
   } = useItinerary(tripId);
 
   const {
-    data: tripPreferences,
+    data: tripPreferencesFromBackend, // tripPreferences (backend) to tripPreferencesFromBackend (temporary)
     isPending: tripPreferencesIsPending,
     error: tripPreferencesError,
     refetch: tripPreferencesRefetch,
   } = useTripPreferences(tripId);
 
+  // START: Temporary Itinerary Preview
+  const itinerary = temporaryItinerary;
+  const tripPreferences = temporaryTripPreferences;
+  // END: Temporary Itinerary Preview
+
+  // Uncomment the following codes when the backend is ready
+  /*
   if (itineraryIsPending || tripPreferencesIsPending) {
     return (
       <View style={[styles.loading, { backgroundColor: theme.background }]}>
@@ -177,7 +233,7 @@ export default function ItineraryDetailScreen() {
       </View>
     );
   }
-
+  */
 
   const stops = [...itinerary.stops].sort(
     (first, second) => first.stop_order - second.stop_order,
@@ -189,7 +245,6 @@ export default function ItineraryDetailScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
@@ -198,7 +253,6 @@ export default function ItineraryDetailScreen() {
             styles.heroPlaceholder,
             {
               height: 180 + insets.top,
-              marginTop: -insets.top,
               paddingTop: insets.top,
             },
           ]}
@@ -271,8 +325,22 @@ export default function ItineraryDetailScreen() {
               key={tab}
               accessibilityRole="button"
               accessibilityLabel={tab}
-              disabled={index !== 0}
-              onPress={() => undefined}
+              disabled={tab !== "Map" && index !== 0}
+              onPress={() => {
+                if (tab !== "Map") {
+                  return;
+                }
+
+                router.push({
+                  pathname: "/(app)/itinerary/map",
+                  params: {
+                    trip_id: String(tripId),
+                    itinerary: JSON.stringify(itinerary),
+                    destination: tripPreferences.destination,
+                    starting_location: tripPreferences.starting_location,
+                  },
+                });
+              }}
               style={[
                 styles.actionTab,
                 index === 0 && { borderBottomColor: theme.primary },
