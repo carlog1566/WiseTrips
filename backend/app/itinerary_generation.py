@@ -1,21 +1,22 @@
 from .schemas import Place, TripPreferencesCreate, ItineraryResponse, ItineraryStopCreate, PlaceCreate
-from .place_discovery import discover_places
+from .place_discovery import discover_places, _normalise
 from .place_recommendation import recommend_places
-from datetime import date, time
 from .travel_time_estimation import RouteUnavailableError, travel_time_estimation
+from datetime import date, time
 from dotenv import load_dotenv # For testing
 import os # For testing
 
+
 # Hardcoded time estimate for place
-def estimate_place_time(place: Place) -> int:
-    if place.category == "Attraction":
-        return 120
-    elif place.category == "Food":
-        return 60
-    elif place.category == "Shopping":
-        return 90
-    else:
-        return 60
+def estimate_activity_duration(place: Place) -> int:
+    activities = {
+            "food": 60,
+            "nature": 60,
+            "shopping": 90,
+            "museum": 105,
+            "entertainment": 120
+    }
+    return activities.get(_normalise(place.category), 60)
 
 def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPreferencesCreate, origin: PlaceCreate, api_key: str) -> ItineraryResponse:
     starting_time = preferences.start_time.hour * 60 + preferences.start_time.minute
@@ -49,12 +50,12 @@ def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPrefe
         if place.estimated_cost + current_budget > preferences.budget:
             continue
 
-        time_at_place = estimate_place_time(place)
+        time_at_place = estimate_activity_duration(place)
 
         # Calculate potential time variance due to pacing
-        if preferences.pace == "slow":
+        if preferences.pace == "relaxed":
             time_at_place = int(time_at_place * 1.25)
-        elif preferences.pace == "fast":
+        elif preferences.pace == "packed":
             time_at_place = int(time_at_place * 0.75)
 
         # Calculate estimated time to travel to location
@@ -110,9 +111,9 @@ def test():
             start_time = time(9, 0),
             end_time = time(17,0),
             budget = 70.00,
-            transportation_mode = "DRIVE ",
-            interests = ["Attraction", "Food"], # can change interests, which should change printed results
-            pace = "slow",
+            transportation_mode = "car",
+            interests = ["Museum", "Food"], # can change interests, which should change printed results
+            pace = "relaxed",
         )
     # Hardcoded user origin example
     user_origin = PlaceCreate(

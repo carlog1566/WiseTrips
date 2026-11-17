@@ -1,5 +1,6 @@
 import requests
 from .schemas import PlaceCreate
+import math
 
 class RouteUnavailableError(Exception):
     pass
@@ -9,10 +10,14 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
     # Routes API url
     routes_url = "https://routes.googleapis.com/directions/v2:computeRoutes"
 
-    travel_modes = ["BICYCLE", "DRIVE", "TRANSIT", "TWO_WHEELER", "TRUCK", "WALK"]
-    if travel_type in travel_modes:
-        travel_mode = travel_type
-    else:
+    travel_modes = {
+        "walking": "WALK",
+        "publicTransit": "TRANSIT",
+        "car": "DRIVE",
+        }
+    
+    travel_mode = travel_modes.get(travel_type)
+    if travel_mode is None:
         travel_mode = "DRIVE"
 
     # Request headers
@@ -42,13 +47,23 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
         "travelMode": travel_mode
     }
 
-    response = requests.post(routes_url, json=payload, headers=headers, timeout=10)
-    # For testing without API key (debug stuff not requiring this function but not the API key)
-    """if response.status_code == 400:
+    try:
+        response = requests.post(routes_url, json=payload, headers=headers, timeout=10)
+        # For testing without API key (debug stuff requiring this function but not the API key)
+        """if response.status_code == 400:
         return {"distance" : 1, "duration": 1}"""
-    response.raise_for_status()
+        response.raise_for_status()
+        data = response.json()
+        
+    except requests.exceptions.Timeout as e:
+        raise RoutingAPIError("Routing request timed out") from e
 
-    data = response.json()
+    except requests.exceptions.JSONDecodeError as e:
+        raise RoutingAPIError("Invalid routing response") from e
+
+    except requests.exceptions.RequestException as e:
+        raise RoutingAPIError("Routing request failed") from e
+    
     if "routes" in data and len(data["routes"]) > 0:
         route = data["routes"][0]
 
@@ -57,7 +72,7 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
 
         duration = route.get("duration", "0s")
         seconds = int(duration.rstrip("s"))
-        minutes = round(seconds / 60)
+        minutes = math.ceil(seconds / 60)
 
         return {
             "distance": miles,
