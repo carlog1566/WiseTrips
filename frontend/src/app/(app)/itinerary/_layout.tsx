@@ -30,6 +30,14 @@ export default function ItineraryLayout() {
           ),
         }}
       />
+      <Stack.Screen
+        name="map"
+        options={{
+          headerShown: true,
+          headerTitle: "Itinerary Map",
+          headerTintColor: "black",
+        }}
+      />
     </Stack>
   );
 }
