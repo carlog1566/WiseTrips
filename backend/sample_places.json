@@ -6,7 +6,7 @@
             "address" : "5905 Wilshire Blvd, Los Angeles, CA 90036",
             "latitude" : 34.063949,
             "longitude" : -118.359234,
-            "category" : "Attraction",
+            "category" : "Museums",
             "rating" : 4.6,
             "estimated_cost" : 30.00
         },
@@ -16,7 +16,7 @@
             "address" : "2800 E Observatory Rd, Los Angeles, CA 90027",
             "latitude" : 34.118445,
             "longitude" : -118.300401,
-            "category" : "Attraction",
+            "category" : "Museums",
             "rating" : 4.7,
             "estimated_cost" : 0.00
 
@@ -27,7 +27,7 @@
             "address" : "1200 Getty Center Dr, Los Angeles, CA 90049",
             "latitude" : 34.077348,
             "longitude" : -118.474820,
-            "category" : "Attraction",
+            "category" : "Museums",
             "rating" : 4.8,
             "estimated_cost" : 0.0
         },
