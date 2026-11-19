@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import type { ImageStyle, StyleProp } from "react-native";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -14,10 +14,7 @@ import {
   spacing,
 } from "@/constants/tokens";
 import { useTheme } from "@/hooks/use-theme";
-import {
-  formatDate,
-  formatTime,
-} from "@/itinerary/itinerary";
+import { formatDate, formatTime } from "@/itinerary/itinerary";
 import type {
   ItineraryResponse,
   ItineraryStop,
@@ -29,7 +26,7 @@ import { useTripPreferences } from "@/hooks/use-trip-preferences";
 const itineraryTabs = ["Itinerary", "Explore", "Budget", "Map"] as const;
 
 // START: Temporary Itinerary Preview
-// When the backend is ready, remove this temporary block and 
+// When the backend is ready, remove this temporary block and
 // restore the backend data assignment below. Do not remove the hooks or API code.
 const temporaryItinerary: ItineraryResponse = {
   trip_id: 1,

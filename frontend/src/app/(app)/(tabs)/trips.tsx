@@ -1,5 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
 import { memo, useCallback, useState } from "react";
@@ -8,7 +7,6 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -23,15 +21,7 @@ import {
 } from "@/constants/tokens";
 import { useTheme } from "@/hooks/use-theme";
 import type { TripPreferencesResponse } from "@/itinerary/itinerary.types";
-import {
-  parseItineraryParam,
-  createItineraryQueryKey,
-  type RecentItinerary,
-} from "@/itinerary/itinerary";
 import { useSavedTrips } from "@/hooks/use-saved-trips";
-
-// Temporary saved trips for local testing until GET /api/trips is available.
-const tripPreferences: TripPreferencesResponse[] = [];
 
 const placeImages = [
   {
@@ -52,10 +42,6 @@ const placeImages = [
 ];
 
 const imagePlaceholder = require("@/assets/images/placeholder.png");
-
-function getPlaceImageUrl(placeId: number) {
-  return placeImages.find((place) => place.placeId === placeId)?.imageUrl;
-}
 
 function PlaceImage({
   accessibilityLabel,
@@ -188,40 +174,38 @@ export default function TripsScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
       <View style={styles.content}>
-          <FlatList
-            data={tripPreferences ?? []}
-            renderItem={renderTripRow}
-            keyExtractor={tripRowKey}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            onEndReachedThreshold={0.5}
-            ListEmptyComponent={() => (
-              <View style={styles.emptyState}>
-                <View
-                  style={[
-                    styles.emptyIcon,
-                    { backgroundColor: theme.primaryBackground },
-                  ]}
-                >
-                  <SymbolView
-                    name={{ ios: "map", android: "map" }}
-                    size={30}
-                    tintColor={theme.primary}
-                  />
-                </View>
-                <Text style={[styles.emptyTitle, { color: theme.text }]}>
-                  No itineraries yet
-                </Text>
-                <Text
-                  style={[styles.emptyMessage, { color: colorPallet.muted }]}
-                >
-                  Plan a trip to see your itinerary here.
-                </Text>
+        <FlatList
+          data={savedTrips ?? []}
+          renderItem={renderTripRow}
+          keyExtractor={tripRowKey}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <View
+                style={[
+                  styles.emptyIcon,
+                  { backgroundColor: theme.primaryBackground },
+                ]}
+              >
+                <SymbolView
+                  name={{ ios: "map", android: "map" }}
+                  size={30}
+                  tintColor={theme.primary}
+                />
               </View>
-            )}
-          />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                No itineraries yet
+              </Text>
+              <Text style={[styles.emptyMessage, { color: colorPallet.muted }]}>
+                Plan a trip to see your itinerary here.
+              </Text>
+            </View>
+          )}
+        />
       </View>
 
       <View style={[styles.footer, { backgroundColor: theme.background }]}>

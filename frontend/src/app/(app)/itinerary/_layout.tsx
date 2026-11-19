@@ -11,7 +11,7 @@ export default function ItineraryLayout() {
           headerShown: true,
           headerTransparent: true,
           headerTitle: "Itinerary",
-          headerTintColor: "black",
+          headerTintColor: "white",
           headerShadowVisible: false,
           headerStyle: { backgroundColor: "rgba(255, 255, 255, 0.12)" },
           headerLeft: () => (
@@ -26,7 +26,7 @@ export default function ItineraryLayout() {
                   ios: "house.fill",
                   android: "home",
                 }}
-                tintColor="black"
+                tintColor="white"
                 size={24}
               />
             </Pressable>
