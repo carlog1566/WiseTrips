@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import type { ImageStyle, StyleProp } from "react-native";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -24,40 +24,6 @@ import { useItinerary } from "@/hooks/use-itinerary";
 import { useTripPreferences } from "@/hooks/use-trip-preferences";
 
 const itineraryTabs = ["Itinerary", "Explore", "Budget", "Map"] as const;
-
-// START: Temporary Itinerary Preview
-// When the backend is ready, remove this temporary block and
-// restore the backend data assignment below. Do not remove the hooks or API code.
-const temporaryItinerary: ItineraryResponse = {
-  trip_id: 1,
-  stops: [
-    {
-      id: 1,
-      trip_id: 1,
-      place_id: 101,
-      stop_order: 1,
-      arrival_time: "09:00:00",
-      departure_time: "10:00:00",
-    },
-    {
-      id: 2,
-      trip_id: 1,
-      place_id: 102,
-      stop_order: 2,
-      arrival_time: "10:15:00",
-      departure_time: "11:45:00",
-    },
-    {
-      id: 3,
-      trip_id: 1,
-      place_id: 103,
-      stop_order: 3,
-      arrival_time: "12:00:00",
-      departure_time: "13:00:00",
-    },
-  ],
-  total_travel_minutes: 30,
-};
 
 const temporaryTripPreferences: TripPreferencesResponse = {
   id: 1,
@@ -172,26 +138,19 @@ export default function ItineraryDetailScreen() {
   const tripId = Number(trip_id);
 
   const {
-    data: itineraryFromBackend, // itinerary (backend) to itineraryFromBackend (temporary)
+    data: itinerary, 
     isPending: itineraryIsPending,
     error: itineraryError,
     refetch: itineraryRefetch,
   } = useItinerary(tripId);
 
   const {
-    data: tripPreferencesFromBackend, // tripPreferences (backend) to tripPreferencesFromBackend (temporary)
+    data: tripPreferences,
     isPending: tripPreferencesIsPending,
     error: tripPreferencesError,
     refetch: tripPreferencesRefetch,
   } = useTripPreferences(tripId);
 
-  // START: Temporary Itinerary Preview
-  const itinerary = temporaryItinerary;
-  const tripPreferences = temporaryTripPreferences;
-  // END: Temporary Itinerary Preview
-
-  // Uncomment the following codes when the backend is ready
-  /*
   if (itineraryIsPending || tripPreferencesIsPending) {
     return (
       <View style={[styles.loading, { backgroundColor: theme.background }]}>
@@ -230,7 +189,6 @@ export default function ItineraryDetailScreen() {
       </View>
     );
   }
-  */
 
   const stops = [...itinerary.stops].sort(
     (first, second) => first.stop_order - second.stop_order,
