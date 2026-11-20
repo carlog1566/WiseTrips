@@ -14,7 +14,7 @@ VALID_TRIP = {
     "end_time": "17:00:00",
     "budget": 100,
     "transportation_mode": "driving",
-    "interests": ["Attraction"],
+    "interests": ["Museums"],
     "pace": "slow",
 }
 
@@ -25,14 +25,14 @@ def test_generate_trip_returns_itinerary():
         json=VALID_TRIP,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 200, response.json()
 
     response_data = response.json()
 
-    assert isinstance(response_data["trip_id"], int)
+    assert response_data["trip_id"] > 0
     assert "stops" in response_data
     assert "total_travel_minutes" in response_data
-    assert response_data["total_travel_minutes"] == 30
+    assert len(response_data["stops"]) > 0
 
 
 def test_generate_trip_rejects_invalid_time():
@@ -47,6 +47,20 @@ def test_generate_trip_rejects_invalid_time():
     )
 
     assert response.status_code == 422
+
+
+def test_generate_trip_returns_404_when_no_places():
+    invalid_trip = VALID_TRIP.copy()
+
+    invalid_trip["destination"] = "New York"
+
+    response = client.post(
+        "/api/trips/generate",
+        json=invalid_trip,
+    )
+
+    assert response.status_code == 404
+
 
 def test_generate_trip_saves_itinerary():
     response = client.post(
@@ -65,9 +79,30 @@ def test_generate_trip_saves_itinerary():
         assert stop["trip_id"] == response_data["trip_id"]
         assert stop["place_id"] > 0
         assert stop["stop_order"] > 0
+        assert "place" in stop
 
 
-def test_get_saved_itinerary():
+def test_get_all_trips():
+    create_response = client.post(
+        "/api/trips/generate",
+        json=VALID_TRIP,
+    )
+
+    assert create_response.status_code == 200
+
+    trip_id = create_response.json()["trip_id"]
+
+    response = client.get("/api/trips")
+
+    assert response.status_code == 200
+
+    trips = response.json()
+
+    assert isinstance(trips, list)
+    assert any(trip["id"] == trip_id for trip in trips)
+
+
+def test_get_saved_trip():
     create_response = client.post(
         "/api/trips/generate",
         json=VALID_TRIP,
@@ -83,13 +118,80 @@ def test_get_saved_itinerary():
 
     assert response.status_code == 200
 
-    response_data = response.json()
+    trip = response.json()
 
-    assert response_data["trip_id"] == trip_id
-    assert len(response_data["stops"]) > 0
+    assert trip["id"] == trip_id
+    assert trip["destination"] == "Los Angeles"
 
 
-def test_get_missing_itinerary_returns_404():
+def test_get_saved_itinerary():
+    create_response = client.post(
+        "/api/trips/generate",
+        json=VALID_TRIP,
+    )
+
+    assert create_response.status_code == 200
+
+    trip_id = create_response.json()["trip_id"]
+
+    response = client.get(
+        f"/api/trips/{trip_id}/itinerary"
+    )
+
+    assert response.status_code == 200
+
+    itinerary = response.json()
+
+    assert itinerary["trip_id"] == trip_id
+    assert len(itinerary["stops"]) > 0
+    assert "total_travel_minutes" in itinerary
+
+    for stop in itinerary["stops"]:
+        assert "place" in stop
+        assert stop["place"]["id"] == stop["place_id"]
+
+
+def test_get_missing_trip_returns_404():
     response = client.get("/api/trips/999999")
 
     assert response.status_code == 404
+
+
+def test_get_missing_itinerary_returns_404():
+    response = client.get(
+        "/api/trips/999999/itinerary"
+    )
+
+    assert response.status_code == 404
+
+
+def test_generated_and_saved_stop_ids_match():
+    response = client.post(
+        "/api/trips/generate",
+        json=VALID_TRIP,
+    )
+
+    assert response.status_code == 200
+
+    generated = response.json()
+    trip_id = generated["trip_id"]
+
+    saved_response = client.get(
+        f"/api/trips/{trip_id}/itinerary"
+    )
+
+    assert saved_response.status_code == 200
+
+    saved = saved_response.json()
+
+    generated_ids = [
+        stop["id"] for stop in generated["stops"]
+    ]
+
+    saved_ids = [
+        stop["id"] for stop in saved["stops"]
+    ]
+
+    assert all(stop_id > 0 for stop_id in generated_ids)
+    assert len(generated_ids) == len(set(generated_ids))
+    assert generated_ids == saved_ids

@@ -13,7 +13,10 @@ from app.place_discovery import discover_places
 from app.place_recommendation import recommend_places
 from app.schemas import (
     ItineraryResponse,
+    ItineraryStopResponse,
     ItineraryStopCreate,
+    Place,
+    TripPreferences,
     TripPreferencesCreate,
 )
 
@@ -22,6 +25,19 @@ router = APIRouter(
     prefix="/api/trips",
     tags=["trips"],
 )
+
+
+def convert_place(place: PlaceModel) -> Place:
+    return Place(
+        id=place.id,
+        name=place.name,
+        address=place.address,
+        latitude=place.latitude,
+        longitude=place.longitude,
+        category=place.category,
+        rating=place.rating,
+        estimated_cost=place.estimated_cost,
+    )
 
 
 @router.post(
@@ -121,14 +137,17 @@ def generate_itinerary(
             )
 
             db.add(stop)
+            db.flush()
 
             response_stops.append(
-                ItineraryStopCreate(
+                ItineraryStopResponse(
+                    id=stop.id,
                     trip_id=trip.id,
                     place_id=saved_place.id,
                     stop_order=stop.stop_order,
                     arrival_time=stop.arrival_time,
                     departure_time=stop.departure_time,
+                    place=convert_place(saved_place),
                 )
             )
 
@@ -142,6 +161,7 @@ def generate_itinerary(
             )
 
         db.commit()
+        db.refresh(trip)
 
     except HTTPException:
         raise
@@ -165,7 +185,37 @@ def generate_itinerary(
 
 
 @router.get(
-    "/{trip_id}",
+    "",
+    response_model=list[TripPreferences],
+)
+def get_all_trips(
+    db: Session = Depends(get_db),
+):
+    trips = (
+        db.query(Trip)
+        .order_by(Trip.id)
+        .all()
+    )
+
+    return [
+        TripPreferences(
+            id=trip.id,
+            destination=trip.destination,
+            trip_date=trip.trip_date,
+            starting_location=trip.starting_location,
+            start_time=trip.start_time,
+            end_time=trip.end_time,
+            budget=trip.budget,
+            transportation_mode=trip.transportation_mode,
+            interests=trip.interests,
+            pace=trip.pace,
+        )
+        for trip in trips
+    ]
+
+
+@router.get(
+    "/{trip_id}/itinerary",
     response_model=ItineraryResponse,
 )
 def get_itinerary(
@@ -191,16 +241,37 @@ def get_itinerary(
         .all()
     )
 
-    stops = [
-        ItineraryStopCreate(
-            trip_id=stop.trip_id,
-            place_id=stop.place_id,
-            stop_order=stop.stop_order,
-            arrival_time=stop.arrival_time,
-            departure_time=stop.departure_time,
+    if not saved_stops:
+        raise HTTPException(
+            status_code=404,
+            detail="Itinerary not found",
         )
-        for stop in saved_stops
-    ]
+
+    stops = []
+
+    for stop in saved_stops:
+        place = db.get(
+            PlaceModel,
+            stop.place_id,
+        )
+
+        if place is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Saved itinerary contains a missing place",
+            )
+
+        stops.append(
+            ItineraryStopResponse(
+                id=stop.id,
+                trip_id=stop.trip_id,
+                place_id=stop.place_id,
+                stop_order=stop.stop_order,
+                arrival_time=stop.arrival_time,
+                departure_time=stop.departure_time,
+                place=convert_place(place),
+            )
+        )
 
     total_travel_minutes = (
         max(len(stops) - 1, 0) * 15
@@ -210,4 +281,34 @@ def get_itinerary(
         trip_id=trip.id,
         stops=stops,
         total_travel_minutes=total_travel_minutes,
+    )
+
+
+@router.get(
+    "/{trip_id}",
+    response_model=TripPreferences,
+)
+def get_trip(
+    trip_id: int,
+    db: Session = Depends(get_db),
+):
+    trip = db.get(Trip, trip_id)
+
+    if trip is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found",
+        )
+
+    return TripPreferences(
+        id=trip.id,
+        destination=trip.destination,
+        trip_date=trip.trip_date,
+        starting_location=trip.starting_location,
+        start_time=trip.start_time,
+        end_time=trip.end_time,
+        budget=trip.budget,
+        transportation_mode=trip.transportation_mode,
+        interests=trip.interests,
+        pace=trip.pace,
     )
