@@ -12,6 +12,7 @@ from sqlalchemy import (
     Time,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.database import Base
 
@@ -129,6 +130,10 @@ class Place(Base):
         back_populates="place",
     )
 
+    regular_opening_hours: Mapped[dict | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
 
 class ItineraryStop(Base):
     __tablename__ = "itinerary_stops"

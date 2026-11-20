@@ -36,6 +36,7 @@ class PlaceCreate(BaseModel):
         le=5,
     )
     estimated_cost: float = Field(ge=0)
+    regular_opening_hours: dict | None = None
 
 
 class ItineraryStopCreate(BaseModel):
