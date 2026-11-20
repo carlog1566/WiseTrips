@@ -1,155 +1,245 @@
 # WiseTrips — Local Development Setup
 
-This guide walks you through getting **WiseTrips** running on your computer so you can start developing. WiseTrips uses **React Native / Expo** for the mobile app and **Python / FastAPI** for the backend.
+This guide covers setting up **WiseTrips** locally, including PostgreSQL, the FastAPI backend, and the React Native/Expo mobile app. WiseTrips targets **iOS and Android**; you can develop on macOS or Windows.
 
-**WiseTrips is iOS-first, but you can develop and test the shared React Native app using either an iPhone or an Android phone.** You do **not** need an iPhone or a Mac to contribute.
+## 1. Install the Required Tools
 
-## 1. Install the required tools
-
-Install these on your **computer** (Windows or macOS):
-
-| Tool | What it's for | Download |
+| Tool | Purpose | Link |
 | --- | --- | --- |
-| **Git** | Downloading the repository | [Download Git](https://git-scm.com/downloads) |
-| **Node.js (LTS)** | Running the Expo frontend (includes npm) | [Download Node.js](https://nodejs.org/en/download) |
-| **uv** | Managing Python and installing backend dependencies | [Install uv](https://docs.astral.sh/uv/getting-started/installation/) |
-| **VS Code** (recommended) **or another code editor** | Editing the frontend and backend code | [Download VS Code](https://code.visualstudio.com/download) |
+| **Git** | Clone the repository | [Install Git](https://git-scm.com/downloads) |
+| **Node.js (LTS)** | Run the Expo frontend and npm | [Install Node.js](https://nodejs.org/en/download) |
+| **uv** | Manage Python 3.14+ and backend dependencies | [Install uv](https://docs.astral.sh/uv/getting-started/installation/) |
+| **PostgreSQL** | Store trips, places, and itinerary stops | [Install PostgreSQL](https://www.postgresql.org/download/) |
+| **pgAdmin 4** | Manage the local database | [Install pgAdmin](https://www.pgadmin.org/download/) |
+| **VS Code** | Edit the project | [Install VS Code](https://code.visualstudio.com/) |
 
-**Mac users:** You can also install **[Xcode](https://developer.apple.com/xcode/)** if you prefer using it for Apple/iOS development or want to run the iOS Simulator. **VS Code is recommended for editing WiseTrips’ React Native/TypeScript and Python files, but it isn’t mandatory.** Xcode is optional, and it is available only on macOS.
+For mobile testing, choose one option:
 
-After installing everything, restart your terminal and confirm these commands work:
+- **macOS / iOS Simulator:** Install [Xcode](https://developer.apple.com/xcode/), configure Command Line Tools in **Settings → Locations**, and install an iOS Simulator runtime.
+- **Android Emulator:** Install [Android Studio](https://developer.android.com/studio) and create a virtual device.
+- **Physical Android or compatible iPhone:** Install [Expo Go](https://expo.dev/go). Connect your phone and computer to the same Wi-Fi network.
+
+You also need a **Google Cloud project with billing enabled**, a Google Maps Platform API key, and the **Places API (New)**, **Geocoding API**, and **Routes API** enabled.
+
+Verify the installations:
 
 ```bash
 git --version
 node --version
 npm --version
 uv --version
+psql --version
 ```
 
-## 2. Choose how to run the mobile app
-
-You only need **one** of the following ways to view and test WiseTrips.
-
-### Windows computer
-
-**Recommended: Use Expo Go on your phone.**
-
-1. Install **Expo Go on your phone**, **not on your Windows computer**:
-   - **Android:** Download it from the [Google Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent).
-   - **iPhone:** See [Expo Go for iOS](https://expo.dev/go) for the version and installation options compatible with our project.
-2. If you plan to use Expo Go, create a free [Expo account](https://expo.dev/signup) and sign in to that account **inside the Expo Go app on your phone**.
-3. Connect your phone and Windows computer to the **same Wi-Fi network**.
-4. In Step 5, you'll sign in to the **same Expo account in your terminal**, start Expo, and scan its QR code with your phone.
-
-### Mac computer
-
-Choose whichever is easier:
-
-- **Physical phone:** Install **Expo Go** on an Android phone or compatible iPhone, create a free [Expo account](https://expo.dev/signup), and sign in to that account **in the Expo Go app**. Connect the phone and Mac to the same Wi-Fi network. You'll also sign in through your terminal in Step 5.
-- **iOS Simulator (no iPhone required):** Install [Xcode](https://developer.apple.com/xcode/) from the Mac App Store. Open **Xcode → Settings → Locations** to configure Command Line Tools, then **Settings → Components** to download an iOS Simulator runtime if needed.
-
-**Editor choice:** You can use **VS Code (recommended)** to edit WiseTrips, or use **Xcode if you prefer working in Apple’s IDE**. Xcode is particularly useful for the **iOS Simulator and native iOS development**. Because most WiseTrips code is React Native/TypeScript and Python, VS Code offers a more convenient editing experience. Either way, you still run the Expo and FastAPI commands in the terminal.
-
-## 3. Clone WiseTrips
-
-Open a terminal (PowerShell on Windows or Terminal on macOS):
+## 2. Clone the Repository
 
 ```bash
-git clone https://github.com/OWNER_OR_ORG/WiseTrips.git
+git clone https://github.com/carlog1566/WiseTrips.git
 cd WiseTrips
 ```
 
-Replace `OWNER_OR_ORG` with the actual GitHub username or organization. Open the **WiseTrips** folder in VS Code or your preferred editor. On a Mac, you may use Xcode for iOS-related development if you prefer; the commands below remain the same.
+## 3. Create Your Local PostgreSQL Database
 
-## 4. Install and run the backend
+Each contributor should use their own local database.
 
-Open **Terminal 1** from the root of the WiseTrips repository:
+1. Start PostgreSQL and open **pgAdmin 4**.
+2. Connect to your local PostgreSQL server (default port: `5432`).
+3. Right-click **Databases → Create → Database**.
+4. Name the database `wisetrips` and click **Save**.
+
+Alternatively, use `psql` with an account authorized to create databases:
+
+```sql
+CREATE DATABASE wisetrips;
+```
+
+Remember your PostgreSQL username, password, host, and port for the backend configuration.
+
+## 4. Backend Setup
+
+From the repository root:
 
 ```bash
 cd backend
 uv sync
+```
+
+This installs the Python environment and backend dependencies. Python **3.14+** is required.
+
+### Configure Environment Variables
+
+Copy the existing environment template.
+
+**macOS / Linux:**
+
+```bash
+cp .env.example .env
+```
+
+**Windows PowerShell:**
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit `backend/.env`:
+
+```env
+DATABASE_URL=postgresql+psycopg://postgres:YOUR_PASSWORD@localhost:5432/wisetrips
+GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
+```
+
+Replace the placeholders with your database credentials and Google Maps API key. If your PostgreSQL username differs from `postgres`, update it in the connection string.
+
+Never commit `.env` files or private credentials.
+
+### Run Database Migrations
+
+Inside `backend/`, execute:
+
+```bash
+uv run alembic upgrade head
+```
+
+This creates the database tables:
+
+- `trips`
+- `places`
+- `itinerary_stops`
+- `alembic_version`
+
+To verify in pgAdmin, navigate to **Databases → wisetrips → Schemas → public → Tables**.
+
+### Start the Backend
+
+```bash
 uv run fastapi dev app/main.py
 ```
 
-`uv sync` creates the Python environment and installs the project's dependencies. Keep this terminal open.
+The backend runs at `http://127.0.0.1:8000`.
 
-Verify the backend is running by visiting:
+Useful endpoints:
 
-**http://127.0.0.1:8000/docs**
+- [API Health Check](http://127.0.0.1:8000/health)
+- [API Documentation](http://127.0.0.1:8000/docs)
+- [Saved Trips](http://127.0.0.1:8000/api/trips)
 
-You should see the interactive FastAPI API documentation.
+For physical-device testing, run the backend with an accessible network address:
 
-## 5. Install and run the frontend
+```bash
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-Open a **second terminal** from the root of the WiseTrips repository:
+Only expose your development server on a trusted local network.
+
+## 5. Frontend Setup
+
+Open a second terminal from the repository root:
 
 ```bash
 cd frontend
 npm ci
 ```
 
-If `npm ci` fails because the project doesn't have a `package-lock.json` yet, run `npm install` instead.
+### Configure Environment Variables
 
-### If you're using Expo Go on your phone
+Copy the frontend environment template.
 
-1. **Create an Expo account:** Visit [expo.dev/signup](https://expo.dev/signup) to create a free account if you haven't already.
-2. **Sign in on your phone:** Open the **Expo Go** app and log in with your new Expo account.
-3. **Sign in through your computer's terminal:** While you're in the `frontend/` directory, run:
+**macOS / Linux:**
 
-   ```bash
-   npx expo login
-   ```
+```bash
+cp .env.example .env
+```
 
-   Enter your Expo account credentials when prompted. You can check which account is signed in using:
+**Windows PowerShell:**
 
-   ```bash
-   npx expo whoami
-   ```
+```powershell
+Copy-Item .env.example .env
+```
 
-4. **Use the same account** in Expo Go and in your terminal. This is especially important when testing on a physical iPhone.
+Set the API URL in `frontend/.env` based on your device:
 
-If you're using only an iOS Simulator or Android emulator, you can generally skip the Expo account steps.
+| Device | API URL |
+| --- | --- |
+| iOS Simulator | `http://127.0.0.1:8000` |
+| Android Emulator | `http://10.0.2.2:8000` |
+| Physical Device | `http://YOUR_COMPUTER_LAN_IP:8000` |
 
-### Start WiseTrips
+Example for the iOS Simulator:
 
-Run from `frontend/`:
+```env
+EXPO_PUBLIC_API_URL=http://127.0.0.1:8000
+```
+
+For a physical device, replace `YOUR_COMPUTER_LAN_IP` with your computer's local IP address. The device and computer must be connected to the same network.
+
+For Android development builds using Google Maps, you can also configure a separate, Android-app-restricted `GOOGLE_MAPS_ANDROID_API_KEY`.
+
+### Start Expo
 
 ```bash
 npx expo start
 ```
 
-Expo should display a **QR code** in the terminal. Keep this terminal open while developing.
+Choose your testing platform:
 
-**If you're using a phone (Windows or Mac):**
+- **iOS Simulator:** Press `i`, or run `npx expo start --ios`.
+- **Android Emulator:** Start your emulator and press `a`, or run `npx expo start --android`.
+- **Physical Device:** Open the project through a compatible version of Expo Go.
 
-1. Make sure the phone and computer are on the same Wi-Fi network.
-2. **Android:** Open Expo Go and scan the QR code.
-3. **iPhone:** Scan the QR code with the Camera app to open the project in Expo Go.
-4. WiseTrips should load on your phone, as long as your Expo Go version is compatible with the project's Expo SDK.
+WiseTrips currently targets **iOS and Android**, not web.
 
-**If you're using the iOS Simulator on a Mac:**
+## 6. Verify the Application
 
-1. Make sure Xcode and an iOS Simulator runtime are installed.
-2. With Expo running, press **`i`** in Terminal 2.
-3. Expo should launch WiseTrips in the iOS Simulator.
+1. Make sure PostgreSQL, FastAPI, and Expo are running.
+2. Visit `http://127.0.0.1:8000/api/trips` to confirm the backend is accessible.
+3. Open WiseTrips and submit trip preferences.
+4. Generate an itinerary and verify its scheduled destinations.
+5. Open the **Map** view to see the itinerary stops.
+6. Navigate to **Trips** to reopen a saved itinerary.
 
-**If you're using an Android emulator:** Start the emulator from Android Studio, then press **`a`** while Expo is running.
+### Run Tests
 
-Edit the code in VS Code or your preferred editor while the app runs on your phone or simulator. Expo will generally reload your changes automatically.
+Backend (from `backend/`):
 
-## 6. Configure local environment variables (if needed)
+```bash
+uv run python -m pytest
+```
 
-If the repository contains `.env.example` files in `frontend/` or `backend/`, copy each one to `.env` **in that same folder** and fill in the values provided by the project lead. If no environment variables are needed yet, skip this step.
+Frontend (from `frontend/`):
 
-**Never commit `.env` files or API keys.** Values prefixed with `EXPO_PUBLIC_` are included in the frontend bundle, so do not put secrets there.
+```bash
+npx tsc --noEmit
+```
 
-## 7. Verify everything works
+Some backend integration tests require a configured database and Google Maps API credentials.
 
-- [ ] `git`, `node`, `npm`, and `uv` commands work.
-- [ ] The backend starts successfully with `uv`.
-- [ ] **http://127.0.0.1:8000/docs** opens on your computer.
-- [ ] The Expo development server starts successfully.
-- [ ] If using Expo Go, you're signed in on the phone and in the terminal with the same Expo account.
-- [ ] WiseTrips opens in **Expo Go** or a simulator/emulator.
+## Troubleshooting
+
+**Database connection failed**
+
+Verify PostgreSQL is running and the `DATABASE_URL` in `backend/.env` contains the correct credentials, database name, and port.
+
+**Database tables do not exist**
+
+Run the migrations again from `backend/`:
+
+```bash
+uv run alembic upgrade head
+```
+
+**Saved itineraries fail to load**
+
+Verify that FastAPI is running and that `EXPO_PUBLIC_API_URL` points to an address accessible from your device. Restart Expo after updating `.env`.
+
+**Google Maps API requests fail**
+
+Check your API key, billing configuration, enabled APIs, and key restrictions.
+
+**iOS Simulator fails to launch**
+
+Verify Xcode Command Line Tools and the iOS Simulator runtime are installed.
 
 To stop either server, press **Ctrl+C** in its terminal.
+
+**Important:** Keep all API keys, database passwords, and `.env` files out of Git.
