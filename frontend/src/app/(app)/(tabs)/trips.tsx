@@ -149,24 +149,6 @@ export default function TripsScreen() {
             Retry
           </Text>
         </Pressable>
-
-        {/* START: Temporary Itinerary Preview Access */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Preview temporary itinerary"
-          onPress={() =>
-            router.push({
-              pathname: "/(app)/itinerary",
-              params: { trip_id: "1" },
-            })
-          }
-          style={[styles.previewMapButton, { borderColor: theme.primary }]}
-        >
-          <Text style={[styles.previewMapButtonText, { color: theme.primary }]}>
-            Temporary Itinerary
-          </Text>
-        </Pressable>
-        {/* END: Temporary Itinerary Preview Access */}
       </View>
     );
   }
@@ -408,16 +390,4 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.body,
     fontWeight: fontWeights.semibold,
   },
-  // START: Temporary Styles
-  previewMapButton: {
-    borderRadius: radious.md,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  previewMapButtonText: {
-    fontSize: fontSizes.body,
-    fontWeight: fontWeights.semibold,
-  },
-  // END: Temporary Styles
 });

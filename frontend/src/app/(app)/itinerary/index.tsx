@@ -14,44 +14,12 @@ import {
   spacing,
 } from "@/constants/tokens";
 import { useTheme } from "@/hooks/use-theme";
-import { formatDate, formatTime } from "@/itinerary/itinerary";
-import type {
-  ItineraryResponse,
-  ItineraryStop,
-  TripPreferencesResponse,
-} from "@/itinerary/itinerary.types";
+import { formatDate, formatTime, getTravelMinutes } from "@/itinerary/itinerary";
+import type { ItineraryStop } from "@/itinerary/itinerary.types";
 import { useItinerary } from "@/hooks/use-itinerary";
 import { useTripPreferences } from "@/hooks/use-trip-preferences";
 
 const itineraryTabs = ["Itinerary", "Explore", "Budget", "Map"] as const;
-
-const temporaryTripPreferences: TripPreferencesResponse = {
-  id: 1,
-  destination: "New York, USA",
-  trip_date: "2024-10-23",
-  starting_location: "Times Square, New York",
-  start_time: "09:00:00",
-  end_time: "18:00:00",
-  budget: 1000,
-  transportation_mode: "car",
-  interests: ["food", "culture"],
-  pace: "Relaxed",
-};
-
-// END: Temporary Itinerary Preview
-
-const travelEstimates = [
-  {
-    minutes: 18,
-    distance: "7.9 mi",
-    icon: { ios: "car", android: "directions_car" },
-  },
-  {
-    minutes: 11,
-    distance: "0.55 mi",
-    icon: { ios: "figure.walk", android: "directions_walk" },
-  },
-] as const;
 
 const placeImages = [
   {
@@ -124,7 +92,7 @@ function getDayTitle(tripDate?: string) {
 }
 
 function getPlaceName(stop: ItineraryStop) {
-  return `Place ${stop.place_id}`;
+  return stop.place.name;
 }
 
 function getVisitHours(stop: ItineraryStop) {
@@ -290,9 +258,6 @@ export default function ItineraryDetailScreen() {
                   pathname: "/(app)/itinerary/map",
                   params: {
                     trip_id: String(tripId),
-                    itinerary: JSON.stringify(itinerary),
-                    destination: tripPreferences.destination,
-                    starting_location: tripPreferences.starting_location,
                   },
                 });
               }}
@@ -327,16 +292,6 @@ export default function ItineraryDetailScreen() {
               {getDayLabel(tripPreferences.trip_date)}
             </Text>
           </Pressable>
-          {["Day 2", "Day 3", "Day 4"].map((day) => (
-            <Pressable
-              key={day}
-              accessibilityRole="button"
-              accessibilityLabel={day}
-              style={styles.dayChip}
-            >
-              <Text style={[styles.dayText, { color: theme.text }]}>{day}</Text>
-            </Pressable>
-          ))}
         </ScrollView>
 
         <View style={styles.dayHeadingRow}>
@@ -347,7 +302,10 @@ export default function ItineraryDetailScreen() {
 
         <View style={styles.timeline}>
           {stops.map((stop, index) => {
-            const travelEstimate = travelEstimates[index] ?? travelEstimates[0];
+            const nextStop = stops[index + 1];
+            const travelMinutes = nextStop
+              ? getTravelMinutes(stop.departure_time, nextStop.arrival_time)
+              : 0;
 
             return (
               <View key={stop.id} style={styles.stopRow}>
@@ -385,20 +343,18 @@ export default function ItineraryDetailScreen() {
                   {index < stops.length - 1 && (
                     <View style={styles.travelRow}>
                       <SymbolView
-                        name={travelEstimate.icon}
+                        name={
+                          tripPreferences.transportation_mode === "walking"
+                            ? { ios: "figure.walk", android: "directions_walk" }
+                            : tripPreferences.transportation_mode === "publicTransit"
+                              ? { ios: "bus", android: "directions_bus" }
+                              : { ios: "car", android: "directions_car" }
+                        }
                         size={18}
                         tintColor={theme.text}
                       />
                       <Text style={[styles.travelText, { color: theme.text }]}>
-                        {travelEstimate.minutes} mins
-                      </Text>
-                      <Text
-                        style={[styles.travelSeparator, { color: theme.text }]}
-                      >
-                        •
-                      </Text>
-                      <Text style={[styles.travelText, { color: theme.text }]}>
-                        {travelEstimate.distance}
+                        {travelMinutes} mins to next stop
                       </Text>
                       <SymbolView
                         name={{

@@ -1,12 +1,11 @@
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import MapView, { Callout, Marker, Polyline, PROVIDER_DEFAULT, PROVIDER_GOOGLE } from "react-native-maps";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, Platform } from "react-native";
 import { colorPallet, fontSizes, fontWeights, radious, spacing } from "@/constants/tokens";
 import { useItinerary } from "@/hooks/use-itinerary";
 import { useTheme } from "@/hooks/use-theme";
-import { useTripPreferences } from "@/hooks/use-trip-preferences";
-import { formatTime, parseItineraryParam } from "@/itinerary/itinerary";
+import { formatTime, getTravelMinutes } from "@/itinerary/itinerary";
 import type { ItineraryResponse, ItineraryStop } from "@/itinerary/itinerary.types";
 
 type Coordinate = {
@@ -14,127 +13,53 @@ type Coordinate = {
   longitude: number;
 };
 
-type StopWithOptionalPlace = ItineraryStop & {
-  place?: {
-    name?: string;
-    latitude?: number;
-    longitude?: number;
-  } | null;
-};
 
 type MapStop = {
   stop: ItineraryStop;
   coordinate: Coordinate;
   name: string;
-  isPreviewCoordinate: boolean;
 };
 
-const previewStartingCoordinate: Coordinate = {
-  latitude: 40.758,
-  longitude: -73.9855,
-};
-
-// The current ItineraryResponse only contains place_id values. These locations
-// keep the map preview usable until the API returns place coordinates.
-const previewPlaceCoordinates: Record<number, Coordinate> = {
-  101: { latitude: 40.7411, longitude: -73.9897 },
-  102: { latitude: 40.7061, longitude: -74.0087 },
-  103: { latitude: 40.7484, longitude: -73.9857 },
-};
-
-const travelEstimates = [
-  { minutes: 18, distance: "7.9 mi" },
-  { minutes: 11, distance: "0.55 mi" },
-] as const;
-
-function getSingleParam(value?: string | string[]) {
-  return typeof value === "string" ? value : undefined;
-}
-
-function getCoordinateForStop(stop: ItineraryStop, index: number): MapStop {
-  const stopWithPlace = stop as StopWithOptionalPlace;
-  const place = stopWithPlace.place;
-  const latitude = place?.latitude;
-  const longitude = place?.longitude;
-  const hasPlaceCoordinate =
-    typeof latitude === "number" && typeof longitude === "number";
-
-  if (hasPlaceCoordinate) {
-    return {
-      stop,
-      coordinate: {
-        latitude,
-        longitude,
-      },
-      name: place?.name ?? "Place " + stop.place_id,
-      isPreviewCoordinate: false,
-    };
-  }
-
+function getCoordinateForStop(stop: ItineraryStop): MapStop {
   return {
     stop,
-    coordinate:
-      previewPlaceCoordinates[stop.place_id] ?? {
-        latitude: previewStartingCoordinate.latitude + (index + 1) * 0.01,
-        longitude: previewStartingCoordinate.longitude - (index + 1) * 0.01,
-      },
-    name: "Place " + stop.place_id,
-    isPreviewCoordinate: true,
+    coordinate: {
+      latitude: stop.place.latitude,
+      longitude: stop.place.longitude,
+    },
+    name: stop.place.name,
   };
 }
 
-function getTravelEstimate(index: number) {
-  return travelEstimates[index] ?? travelEstimates[0];
-}
 
 export default function ItineraryMapScreen() {
   const theme = useTheme();
   const mapRef = useRef<MapView | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<number | null>(null);
-  const {
-    trip_id,
-    itinerary: itineraryParam,
-    destination: destinationParam,
-    starting_location: startingLocationParam,
-  } = useLocalSearchParams<{
-    trip_id?: string;
-    itinerary?: string;
-    destination?: string;
-    starting_location?: string;
-  }>();
+  const { trip_id } = useLocalSearchParams<{ trip_id?: string }>();
   const tripId = Number(trip_id);
-  const itineraryFromParams = parseItineraryParam(itineraryParam);
-  const queryTripId = itineraryFromParams ? 0 : tripId;
-  const itineraryQuery = useItinerary(queryTripId);
-  const preferencesQuery = useTripPreferences(queryTripId);
-  const itinerary: ItineraryResponse | null =
-    itineraryFromParams ?? itineraryQuery.data ?? null;
+
+  const itineraryQuery = useItinerary(tripId);
+  const itinerary: ItineraryResponse | null = itineraryQuery.data ?? null;
 
   const stops = useMemo(
     () =>
       [...(itinerary?.stops ?? [])]
         .sort((first, second) => first.stop_order - second.stop_order)
-        .map((stop, index) => getCoordinateForStop(stop, index)),
+        .map(getCoordinateForStop),
     [itinerary],
   );
+
   const routeCoordinates = useMemo(
-    () => [previewStartingCoordinate, ...stops.map((item) => item.coordinate)],
+    () => stops.map((item) => item.coordinate),
     [stops],
   );
-  const selectedStop = stops.find((item) => item.stop.id === selectedStopId);
-  const isLoading = !itineraryFromParams && itineraryQuery.isPending;
+
+  const isLoading = tripId > 0 && itineraryQuery.isPending;
   const hasError =
-    !itineraryFromParams &&
-    Boolean(itineraryQuery.error || preferencesQuery.error) &&
-    !itineraryQuery.data;
-  const destination =
-    getSingleParam(destinationParam) ??
-    preferencesQuery.data?.destination ??
-    "Your destination";
-  const startingLocation =
-    getSingleParam(startingLocationParam) ??
-    preferencesQuery.data?.starting_location ??
-    "Starting location";
+    !Number.isInteger(tripId) ||
+    tripId <= 0 ||
+    Boolean(itineraryQuery.error);
 
   useEffect(() => {
     if (routeCoordinates.length < 2) {
@@ -169,7 +94,7 @@ export default function ItineraryMapScreen() {
     );
   }
 
-  if (hasError || !itinerary) {
+  if (hasError || !itinerary || stops.length === 0) {
     return (
       <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <Text style={[styles.errorText, { color: theme.text }]}>
@@ -179,7 +104,6 @@ export default function ItineraryMapScreen() {
           accessibilityRole="button"
           onPress={() => {
             void itineraryQuery.refetch();
-            void preferencesQuery.refetch();
           }}
           style={[styles.retryButton, { backgroundColor: theme.primary }]}
         >
@@ -198,7 +122,7 @@ export default function ItineraryMapScreen() {
           style={StyleSheet.absoluteFill}
           provider={Platform.OS === "android" ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
           initialRegion={{
-            ...previewStartingCoordinate,
+            ...stops[0].coordinate,
             latitudeDelta: 0.08,
             longitudeDelta: 0.08,
           }}
@@ -207,18 +131,13 @@ export default function ItineraryMapScreen() {
           toolbarEnabled
         >
 
-          <Marker
-            coordinate={previewStartingCoordinate}
-            pinColor={theme.primary}
-            title={startingLocation}
-            description="Starting location"
-          />
-
-          <Polyline
-            coordinates={routeCoordinates}
-            strokeColor={theme.primary}
-            strokeWidth={5}
-          />
+          {routeCoordinates.length > 1 && (
+            <Polyline
+              coordinates={routeCoordinates}
+              strokeColor={theme.primary}
+              strokeWidth={5}
+            />
+          )}
 
           {stops.map((item, index) => {
             const isSelected = item.stop.id === selectedStopId;
@@ -279,8 +198,13 @@ export default function ItineraryMapScreen() {
         </View>
 
         {stops.map((item, index) => {
-          const estimate = getTravelEstimate(index);
           const isLastStop = index === stops.length - 1;
+          const travelMinutes = !isLastStop
+            ? getTravelMinutes(
+                item.stop.departure_time,
+                stops[index + 1].stop.arrival_time,
+              )
+            : 0;
 
           return (
             <Pressable
@@ -308,7 +232,7 @@ export default function ItineraryMapScreen() {
                 </Text>
                 {!isLastStop && (
                   <Text style={[styles.travelText, { color: theme.text }]}>
-                    {estimate.minutes} mins · {estimate.distance} to next stop
+                    {travelMinutes} mins to next stop
                   </Text>
                 )}
               </View>
