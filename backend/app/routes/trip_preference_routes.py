@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +10,8 @@ from app.models import (
     Place as PlaceModel,
     Trip,
 )
-from app.place_discovery import discover_places
+from app.itinerary_generation import generate_itinerary as generate_plan
+from app.place_discovery import discover_places, geocode_location
 from app.place_recommendation import recommend_places
 from app.schemas import (
     ItineraryResponse,
@@ -37,6 +39,7 @@ def convert_place(place: PlaceModel) -> Place:
         category=place.category,
         rating=place.rating,
         estimated_cost=place.estimated_cost,
+        regular_opening_hours=place.regular_opening_hours,
     )
 
 
@@ -48,7 +51,60 @@ def generate_itinerary(
     trip_preferences: TripPreferencesCreate,
     db: Session = Depends(get_db),
 ):
-    places = discover_places(trip_preferences)
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+
+    if not api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Google Maps API key is not configured",
+        )
+
+    destination = geocode_location(
+        trip_preferences.destination,
+        api_key,
+    )
+
+    origin = geocode_location(
+        trip_preferences.starting_location,
+        api_key,
+    )
+
+    places = discover_places(
+        trip_preferences,
+        destination,
+        api_key,
+    )
+
+    if not places:
+        raise HTTPException(
+            status_code=404,
+            detail="No suitable destinations found",
+        )
+
+
+    ranked_places = recommend_places(
+        places,
+        trip_preferences,
+    )
+
+    if not ranked_places:
+        raise HTTPException(
+            status_code=404,
+            detail="No suitable destinations found",
+        )
+
+    try:
+        planned_stops, total_travel_minutes = generate_plan(
+            ranked_places,
+            trip_preferences,
+            origin,
+            api_key,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        ) from e
 
     if not places:
         raise HTTPException(
@@ -98,11 +154,12 @@ def generate_itinerary(
 
         response_stops = []
 
-        for place in ranked_places:
-            arrival_time = current_time
-            departure_time = arrival_time + visit_duration
+        for item in planned_stops:
+            place = item["place"]
+            arrival_time = item["arrival_time"]
+            departure_time = item["departure_time"]
 
-            if departure_time > end_time:
+            if departure_time > end_time.time():
                 break
 
             saved_place = (
@@ -123,17 +180,21 @@ def generate_itinerary(
                     category=place.category,
                     rating=place.rating,
                     estimated_cost=place.estimated_cost,
+                    regular_opening_hours=place.regular_opening_hours,
                 )
 
                 db.add(saved_place)
                 db.flush()
+            else:
+                if place.regular_opening_hours is not None:
+                    saved_place.regular_opening_hours = place.regular_opening_hours
 
             stop = ItineraryStopModel(
                 trip_id=trip.id,
                 place_id=saved_place.id,
                 stop_order=len(response_stops) + 1,
-                arrival_time=arrival_time.time(),
-                departure_time=departure_time.time(),
+                arrival_time=arrival_time,
+                departure_time=departure_time,
             )
 
             db.add(stop)
@@ -151,8 +212,6 @@ def generate_itinerary(
                 )
             )
 
-            current_time = departure_time + travel_time
-
         if not response_stops:
             db.rollback()
             raise HTTPException(
@@ -166,16 +225,15 @@ def generate_itinerary(
     except HTTPException:
         raise
 
-    except Exception as error:
+    except Exception as e:
         db.rollback()
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail="Unable to save itinerary",
-        ) from error
+            detail="Unable to save itinerary"
+        ) from e
 
-    total_travel_minutes = (
-        (len(response_stops) - 1) * 15
-    )
 
     return ItineraryResponse(
         trip_id=trip.id,
@@ -273,9 +331,22 @@ def get_itinerary(
             )
         )
 
-    total_travel_minutes = (
-        max(len(stops) - 1, 0) * 15
+        
+    total_travel_minutes = int(
+        (
+            datetime.combine(trip.trip_date, stops[0].arrival_time)
+            - datetime.combine(trip.trip_date, trip.start_time)
+        ).total_seconds() / 60
     )
+
+    for previous, current in zip(stops, stops[1:]):
+        total_travel_minutes += int(
+            (
+                datetime.combine(trip.trip_date, current.arrival_time)
+                - datetime.combine(trip.trip_date, previous.departure_time)
+            ).total_seconds() / 60
+        )
+
 
     return ItineraryResponse(
         trip_id=trip.id,
