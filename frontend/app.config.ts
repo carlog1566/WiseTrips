@@ -4,6 +4,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => ({
   ...config,
   plugins: [
     ...(config.plugins ?? []),
+    "expo-web-browser",
     [
       "react-native-maps",
       {

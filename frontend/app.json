@@ -1,5 +1,6 @@
 {
   "expo": {
+    "platforms": ["ios", "android"],
     "name": "frontend",
     "slug": "frontend",
     "version": "1.0.0",
@@ -25,7 +26,6 @@
     },
     "plugins": [
       "expo-router",
-      "react-native-maps",
       [
         "expo-splash-screen",
         {
