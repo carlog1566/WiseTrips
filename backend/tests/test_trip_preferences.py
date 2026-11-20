@@ -163,3 +163,35 @@ def test_get_missing_itinerary_returns_404():
     )
 
     assert response.status_code == 404
+
+
+def test_generated_and_saved_stop_ids_match():
+    response = client.post(
+        "/api/trips/generate",
+        json=VALID_TRIP,
+    )
+
+    assert response.status_code == 200
+
+    generated = response.json()
+    trip_id = generated["trip_id"]
+
+    saved_response = client.get(
+        f"/api/trips/{trip_id}/itinerary"
+    )
+
+    assert saved_response.status_code == 200
+
+    saved = saved_response.json()
+
+    generated_ids = [
+        stop["id"] for stop in generated["stops"]
+    ]
+
+    saved_ids = [
+        stop["id"] for stop in saved["stops"]
+    ]
+
+    assert all(stop_id > 0 for stop_id in generated_ids)
+    assert len(generated_ids) == len(set(generated_ids))
+    assert generated_ids == saved_ids

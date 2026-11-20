@@ -137,9 +137,11 @@ def generate_itinerary(
             )
 
             db.add(stop)
+            db.flush()
 
             response_stops.append(
                 ItineraryStopResponse(
+                    id=stop.id,
                     trip_id=trip.id,
                     place_id=saved_place.id,
                     stop_order=stop.stop_order,
@@ -254,10 +256,14 @@ def get_itinerary(
         )
 
         if place is None:
-            continue
+            raise HTTPException(
+                status_code=500,
+                detail="Saved itinerary contains a missing place",
+            )
 
         stops.append(
             ItineraryStopResponse(
+                id=stop.id,
                 trip_id=stop.trip_id,
                 place_id=stop.place_id,
                 stop_order=stop.stop_order,

@@ -67,7 +67,7 @@ class ItineraryStop(ItineraryStopCreate):
     id: int = Field(gt=0)
 
 
-class ItineraryStopResponse(ItineraryStopCreate):
+class ItineraryStopResponse(ItineraryStop):
     place: Place
 
 
