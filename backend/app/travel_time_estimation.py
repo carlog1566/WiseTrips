@@ -19,17 +19,20 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
         "publicTransit": "TRANSIT",
         "car": "DRIVE",
         "rideshare": "DRIVE",
+        "driving": "DRIVE"
         }
     
     travel_mode = travel_modes.get(travel_type)
     if travel_mode is None:
-        travel_mode = "DRIVE"
+        raise RouteUnavailableError(
+            f"Unsupported transportation method: {travel_type}"
+        )
 
     # Request headers
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": api_key,
-        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters"
+        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline"
     }
 
     payload = {
@@ -66,8 +69,16 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
     except requests.exceptions.JSONDecodeError as e:
         raise RoutingAPIError("Invalid routing response") from e
 
+    
     except requests.exceptions.RequestException as e:
-        raise RoutingAPIError("Routing request failed") from e
+        if e.response is not None:
+            raise RoutingAPIError(
+                f"Routing request failed ({e.response.status_code}): "
+                f"{e.response.text}"
+            ) from e
+
+        raise RoutingAPIError(f"Routing request failed: {e}") from e
+
     
     if "routes" in data and len(data["routes"]) > 0:
         route = data["routes"][0]
@@ -81,6 +92,10 @@ def travel_time_estimation(origin: PlaceCreate, destination: PlaceCreate, travel
 
         return {
             "distance": miles,
-            "duration": minutes
+            "duration": minutes,
+            "distance_meters": meters,
+            "encoded_polyline": route.get(
+                "polyline", {}
+            ).get("encodedPolyline"),
         } 
     raise RouteUnavailableError("Cannot provide route between locations")

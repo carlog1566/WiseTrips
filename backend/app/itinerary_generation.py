@@ -18,7 +18,7 @@ def estimate_activity_duration(place: Place) -> int:
     }
     return activities.get(_normalise(place.category), 60)
 
-def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPreferencesCreate, origin: PlaceCreate, api_key: str) -> ItineraryResponse:
+def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate, origin: PlaceCreate, api_key: str) -> ItineraryResponse:
     starting_time = preferences.start_time.hour * 60 + preferences.start_time.minute
     ending_time = preferences.end_time.hour * 60 + preferences.end_time.minute
     time_available = (ending_time - starting_time)
@@ -87,16 +87,18 @@ def generate_itinerary(trip_id: int, places: list[Place], preferences: TripPrefe
         estimated_arrival = time(hour=arrival_hours, minute=arrival_minutes)
         estimated_departure = time(hour=departure_hours, minute=departure_minutes)
 
-        itinerary_stops.append(ItineraryStopCreate(
-            trip_id=trip_id, 
-            place_id=place.id,
-            stop_order=len(itinerary_stops) + 1, 
-            arrival_time=estimated_arrival, 
-            departure_time=estimated_departure))
+        itinerary_stops.append({
+            "place": place,
+            "arrival_time": estimated_arrival,
+            "departure_time": estimated_departure,
+            "travel_minutes": time_travelling,
+        })
         previous_place = place
         
-    if len(itinerary_stops) == 0: raise ValueError("No suitable destinations or routes cannot be retrieved")
-    return ItineraryResponse(trip_id=trip_id, stops=itinerary_stops, total_travel_minutes=estimated_total_time)
+    if len(itinerary_stops) == 0: 
+        raise ValueError("No suitable destinations or routes cannot be retrieved")
+    
+    return itinerary_stops, sum(stop["travel_minutes"] for stop in itinerary_stops)
 
 def test():
     load_dotenv()

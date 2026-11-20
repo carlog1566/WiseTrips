@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 class PlacesAPIError(Exception):
     """Raised when Places API cannot return search results"""
+    pass
 
 PLACES_FIELD_MASK = (
     "places.displayName,"
@@ -17,7 +18,10 @@ PLACES_FIELD_MASK = (
     "places.location,"
     "places.rating," # Triggers Nearby Search Enterprise SKU
     "places.priceLevel," # (Or priceLevel) Also triggers Nearby Search Enterprise SKU
-    "places.regularOpeningHours" # Also triggers ^
+    "places.regularOpeningHours," # Also triggers ^
+    "places.primaryType,"
+    "places.types,"
+    "places.businessStatus"
 )
 
 places_url = "https://places.googleapis.com/v1/places:searchNearby"
@@ -72,10 +76,16 @@ def discover_places(preferences: TripPreferencesCreate, origin: Place, api_key: 
         ],
     }
 
+    interest_aliases = {
+        "food": "food and drink",
+        "nature": "natural_features",
+        "museums": "culture",
+    }
+
     # Search preferences.interests for types of places, then pick from place_types to insert into includedTypes
     place_types_payload = []
     for interest in preferences.interests:
-        interest_key = _normalise(interest)
+        interest_key = interest_aliases.get(_normalise(interest), _normalise(interest))
 
         if interest_key not in place_types:
             raise PlacesAPIError(f"Unsupported Interest: {interest}")
@@ -120,26 +130,102 @@ def discover_places(preferences: TripPreferencesCreate, origin: Place, api_key: 
 
     
     places = []
+    seen = set()
     if "places" in data and len(data["places"]) > 0:
         for i, place in enumerate(data.get("places")):
 
-            # check if place can fit within user allotted time frame
+            name = (place.get("displayName") or {}).get("text")
+            address = place.get("formattedAddress")
+            location = place.get("location") or {}
 
-            # create place to store for final list
-            place_to_store = Place(
-                id = len(places) + 1,
-                name=place.get("displayName").get("text"),
-                address=place.get("formattedAddress"),
-                latitude=place.get("location").get("latitude"),
-                longitude=place.get("location").get("longitude"),
-                category=place.get("primaryTypeDisplayName").get("text"),# If applying this, will need to use map in recommendation to find specific type and assign key to place category if this makes sense
-                rating=place.get("rating"),
-                estimated_cost=(_estimated_cost(place.get("priceLevel")))
+            # Skip places missing required information
+            if not name or not address:
+                continue
+
+            if "latitude" not in location or "longitude" not in location:
+                continue
+
+            # Skip closed businesses
+            if place.get("businessStatus") not in (None, "OPERATIONAL"):
+                continue
+
+            # Prevent duplicate places
+            key = (name.casefold(), address.casefold())
+            if key in seen:
+                continue
+
+            # Match Google place types to our categories
+            google_types = set(place.get("types") or [])
+            if place.get("primaryType"):
+                google_types.add(place["primaryType"])
+
+            category = next(
+                (
+                    group
+                    for group, types in place_types.items()
+                    if google_types.intersection(types)
+                ),
+                None,
             )
+
+            if category is None:
+                continue
+
+            category = {
+                "food and drink": "food",
+                "culture": "museums",
+                "natural_features": "nature",
+            }.get(category, category)
+
+            # Original place construction, with validated fields
+            place_to_store = Place(
+                id=len(places) + 1,
+                name=name,
+                address=address,
+                latitude=location["latitude"],
+                longitude=location["longitude"],
+                category=category,
+                rating=place.get("rating"),
+                estimated_cost=_estimated_cost(place.get("priceLevel")),
+            )
+
             places.append(place_to_store)
+            seen.add(key)
 
     return places
 
+
+def geocode_location(address: str, api_key: str) -> PlaceCreate:
+    # Send a request to the Google Geocoding API to convert an address into coordinates
+    try:
+        response = requests.get(
+            "https://maps.googleapis.com/maps/api/geocode/json",
+            params={"address": address, "key": api_key},
+            timeout=15,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+    # Handle API request failures or invalid responses
+    except (requests.RequestException, ValueError) as error:
+        raise PlacesAPIError("Geocoding failed") from error
+
+    # Check whether Google was able to find the specified location
+    if data.get("status") != "OK" or not data.get("results"):
+        raise PlacesAPIError(f"Could not locate {address}")
+
+    # Extract the latitude and longitude from the first matching result
+    location = data["results"][0]["geometry"]["location"]
+
+    # Convert the geocoded location into the PlaceCreate model
+    return PlaceCreate(
+        name=address,
+        address=address,
+        latitude=location["lat"],
+        longitude=location["lng"],
+        category="starting_location",
+        estimated_cost=0,
+    )
 
 
 # testing with predefined trip preferences, can remove after

@@ -27,6 +27,7 @@ class PlaceCreate(BaseModel):
     category: str = Field(min_length=1)
     rating: float | None = Field(default=None, ge=0, le=5)
     estimated_cost: float = Field(ge=0)
+    regular_opening_hours: dict | None = None
 
 class ItineraryStopCreate(BaseModel):
     trip_id: int = Field(gt=0)
