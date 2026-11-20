@@ -1,10 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { Image } from "expo-image";
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
-import type { ImageStyle, StyleProp } from "react-native";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { memo, useCallback, useState } from "react";
+import type { ImageStyle, ListRenderItem, StyleProp } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import {
   colorPallet,
@@ -14,11 +20,8 @@ import {
   spacing,
 } from "@/constants/tokens";
 import { useTheme } from "@/hooks/use-theme";
-import {
-  parseItineraryParam,
-  createItineraryQueryKey,
-  type RecentItinerary,
-} from "@/itinerary/itinerary";
+import type { TripPreferencesResponse } from "@/itinerary/itinerary.types";
+import { useSavedTrips } from "@/hooks/use-saved-trips";
 
 const placeImages = [
   {
@@ -39,20 +42,6 @@ const placeImages = [
 ];
 
 const imagePlaceholder = require("@/assets/images/placeholder.png");
-
-type ItineraryParams = {
-  destination?: string | string[];
-  itinerary?: string | string[];
-  tripDate?: string | string[];
-};
-
-function getParamValue(value?: string | string[]) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function getPlaceImageUrl(placeId: number) {
-  return placeImages.find((place) => place.placeId === placeId)?.imageUrl;
-}
 
 function PlaceImage({
   accessibilityLabel,
@@ -123,121 +112,83 @@ function getDateLabel(tripDate?: string) {
 
 export default function TripsScreen() {
   const theme = useTheme();
-  const params = useLocalSearchParams<ItineraryParams>();
-  const { data: recentItinerary } = useQuery<RecentItinerary | null>({
-    queryKey: createItineraryQueryKey("recent"),
-    queryFn: async () => null,
-    initialData: null,
-    staleTime: Infinity,
-  });
-  const itinerary =
-    parseItineraryParam(params.itinerary) ?? recentItinerary?.itinerary ?? null;
-  const destination =
-    getParamValue(params.destination) ??
-    recentItinerary?.destination ??
-    "City, Country";
-  const tripDate =
-    getParamValue(params.tripDate) ?? recentItinerary?.tripDate;
-  const stops = itinerary
-    ? [...itinerary.stops].sort(
-        (first, second) => first.stop_order - second.stop_order,
-      )
-    : [];
-  const firstPlaceId = stops[0]?.place_id;
-  const placeImageUrl = firstPlaceId
-    ? getPlaceImageUrl(firstPlaceId)
-    : undefined;
 
-  function openItinerary() {
-    if (!itinerary) {
-      return;
-    }
+  const { data: savedTrips, isPending, error, refetch } = useSavedTrips();
 
-    router.push({
-      pathname: "/itinerary",
-      params: {
-        destination,
-        itinerary: JSON.stringify(itinerary),
-        tripDate: tripDate ?? "",
-      },
-    } as never);
+  const renderTripRow = useCallback<ListRenderItem<TripPreferencesResponse>>(
+    ({ item }) => <TripRow trip={item} />,
+    [],
+  );
+
+  if (isPending) {
+    return (
+      <View style={[styles.loading, { backgroundColor: theme.background }]}>
+        <ActivityIndicator
+          size="large"
+          color={theme.primary}
+          accessibilityLabel="Loading itinerary"
+        />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={[styles.errorContainer, { backgroundColor: theme.background }]}
+      >
+        <Text style={[styles.errorMessage, { color: theme.text }]}>
+          We had an error getting your saved itineraries.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => refetch()}
+          style={[styles.retryButton, { backgroundColor: theme.primary }]}
+        >
+          <Text style={[styles.retryButtonText, { color: theme.background }]}>
+            Retry
+          </Text>
+        </Pressable>
+      </View>
+    );
   }
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {itinerary ? (
-          <>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Open itinerary for ${destination}`}
-              onPress={openItinerary}
-              style={({ pressed }) => [
-                styles.itineraryCard,
-                pressed && styles.pressed,
-              ]}
-            >
-              <PlaceImage
-                accessibilityLabel={`${destination} place image`}
-                style={StyleSheet.absoluteFill}
-                uri={placeImageUrl}
-              />
-              <View style={styles.cardImageOverlay} />
-
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardDate}>
-                  {getDateLabel(tripDate)}
-                </Text>
-                <View style={styles.statusBadge}>
-                  <Text style={[styles.statusText, { color: theme.text }]}>
-                    {getTripStatus(tripDate)}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.cardFooter}>
-                <View>
-                  <Text style={styles.cardKicker}>
-                    Travel to
-                  </Text>
-                  <Text style={styles.destination}>
-                    {destination}
-                  </Text>
-                </View>
+      <View style={styles.content}>
+        <FlatList
+          data={savedTrips ?? []}
+          renderItem={renderTripRow}
+          keyExtractor={tripRowKey}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyState}>
+              <View
+                style={[
+                  styles.emptyIcon,
+                  { backgroundColor: theme.primaryBackground },
+                ]}
+              >
                 <SymbolView
-                  name={{ ios: "chevron.right", android: "chevron_right" }}
-                  size={22}
-                  tintColor="#FFFFFF"
+                  name={{ ios: "map", android: "map" }}
+                  size={30}
+                  tintColor={theme.primary}
                 />
               </View>
-            </Pressable>
-          </>
-        ) : (
-          <View style={styles.emptyState}>
-            <View
-              style={[
-                styles.emptyIcon,
-                { backgroundColor: theme.primaryBackground },
-              ]}
-            >
-              <SymbolView
-                name={{ ios: "map", android: "map" }}
-                size={30}
-                tintColor={theme.primary}
-              />
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                No itineraries yet
+              </Text>
+              <Text style={[styles.emptyMessage, { color: colorPallet.muted }]}>
+                Plan a trip to see your itinerary here.
+              </Text>
             </View>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>
-              No itineraries yet
-            </Text>
-            <Text style={[styles.emptyMessage, { color: colorPallet.muted }]}>
-              Plan a trip to see your itinerary here.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+          )}
+        />
+      </View>
 
       <View style={[styles.footer, { backgroundColor: theme.background }]}>
         <Pressable
@@ -257,14 +208,71 @@ export default function TripsScreen() {
   );
 }
 
+const tripRowKey = (trip: TripPreferencesResponse) => String(trip.id);
+
+const TripRow = memo(function TripRow({
+  trip,
+}: {
+  trip: TripPreferencesResponse;
+}) {
+  const theme = useTheme();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open itinerary for ${trip.destination}`}
+      onPress={() => {
+        router.replace({
+          pathname: "/(app)/itinerary",
+          params: {
+            trip_id: trip.id,
+          },
+        });
+      }}
+      style={({ pressed }) => [styles.itineraryCard, pressed && styles.pressed]}
+    >
+      <PlaceImage
+        accessibilityLabel={`${trip.destination} place image`}
+        style={StyleSheet.absoluteFill}
+        uri={placeImages[0].imageUrl}
+      />
+      <View style={styles.cardImageOverlay} />
+
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardDate}>{getDateLabel(trip.trip_date)}</Text>
+        <View style={styles.statusBadge}>
+          <Text style={[styles.statusText, { color: theme.text }]}>
+            {getTripStatus(trip.trip_date)}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.cardFooter}>
+        <View>
+          <Text style={styles.cardKicker}>Travel to</Text>
+          <Text style={styles.destination}>{trip.destination}</Text>
+        </View>
+        <SymbolView
+          name={{ ios: "chevron.right", android: "chevron_right" }}
+          size={22}
+          tintColor="#FFFFFF"
+        />
+      </View>
+    </Pressable>
+  );
+});
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
   content: {
+    flex: 1,
+    padding: spacing.lg,
+  },
+  scrollContent: {
     flexGrow: 1,
     gap: spacing.md,
-    padding: spacing.lg,
   },
   emptyState: {
     alignItems: "center",
@@ -339,7 +347,8 @@ const styles = StyleSheet.create({
   footer: {
     borderTopColor: colorPallet.border,
     borderTopWidth: StyleSheet.hairlineWidth,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   planButton: {
     alignItems: "center",
@@ -355,5 +364,30 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
+  },
+  loading: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  errorMessage: {
+    fontSize: fontSizes.body,
+    textAlign: "center",
+  },
+  retryButton: {
+    borderRadius: radious.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  retryButtonText: {
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.semibold,
   },
 });

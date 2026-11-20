@@ -59,3 +59,14 @@ export function formatDate(value?: string): string {
     day: "numeric",
   });
 }
+
+export function getTravelMinutes(departure: string, arrival: string) {
+  const [departureHour, departureMinute] = departure.split(":").map(Number);
+  const [arrivalHour, arrivalMinute] = arrival.split(":").map(Number);
+
+  return Math.max(
+    0,
+    arrivalHour * 60 + arrivalMinute -
+      (departureHour * 60 + departureMinute),
+  );
+}

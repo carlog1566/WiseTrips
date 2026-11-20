@@ -9,8 +9,11 @@ export default function ItineraryLayout() {
         name="index"
         options={{
           headerShown: true,
+          headerTransparent: true,
           headerTitle: "Itinerary",
-          headerTintColor: "black",
+          headerTintColor: "white",
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: "rgba(255, 255, 255, 0.12)" },
           headerLeft: () => (
             <Pressable
               onPress={() => router.dismissTo("/(app)/(tabs)")}
@@ -23,11 +26,19 @@ export default function ItineraryLayout() {
                   ios: "house.fill",
                   android: "home",
                 }}
-                tintColor="black"
+                tintColor="white"
                 size={24}
               />
             </Pressable>
           ),
+        }}
+      />
+      <Stack.Screen
+        name="map"
+        options={{
+          headerShown: true,
+          headerTitle: "Itinerary Map",
+          headerTintColor: "black",
         }}
       />
     </Stack>

@@ -32,6 +32,7 @@ export type ItineraryStop = {
   stop_order: number;
   arrival_time: string;
   departure_time: string;
+  place: Place;
 };
 
 export type ItineraryResponse = {
