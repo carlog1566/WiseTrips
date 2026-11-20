@@ -18,6 +18,51 @@ def estimate_activity_duration(place: Place) -> int:
     }
     return activities.get(_normalise(place.category), 60)
 
+
+def is_open_for_visit(place: Place, trip_date: date, arrival: time, departure: time) -> bool:
+    hours = place.regular_opening_hours
+
+    # Unknown hours: allow the place, but hours are unverified.
+    if not hours or "periods" not in hours:
+        return True
+
+    week_minutes = 7 * 24 * 60
+    day = (trip_date.weekday() + 1) % 7  # Google: Sunday = 0
+
+    visit_start = day * 1440 + arrival.hour * 60 + arrival.minute
+    visit_end = day * 1440 + departure.hour * 60 + departure.minute
+
+    for period in hours["periods"]:
+        opening = period.get("open")
+        closing = period.get("close")
+
+        if not opening:
+            continue
+
+        if not closing:
+            return True  # 24/7 opening period
+
+        open_start = (
+            opening["day"] * 1440
+            + opening.get("hour", 0) * 60
+            + opening.get("minute", 0)
+        )
+        open_end = (
+            closing["day"] * 1440
+            + closing.get("hour", 0) * 60
+            + closing.get("minute", 0)
+        )
+
+        if open_end <= open_start:
+            open_end += week_minutes
+
+        for offset in (-week_minutes, 0, week_minutes):
+            if open_start + offset <= visit_start and visit_end <= open_end + offset:
+                return True
+
+    return False
+
+
 def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate, origin: PlaceCreate, api_key: str) -> ItineraryResponse:
     starting_time = preferences.start_time.hour * 60 + preferences.start_time.minute
     ending_time = preferences.end_time.hour * 60 + preferences.end_time.minute
@@ -71,6 +116,17 @@ def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate, 
         # Check time availability with time travelled, spent at location, and already spent in trip
         if time_travelling + time_at_place + estimated_total_time > time_available:
             continue
+
+        candidate_arrival = starting_time + estimated_total_time + time_travelling
+        candidate_departure = candidate_arrival + time_at_place
+
+        if not is_open_for_visit(
+            place,
+            preferences.trip_date,
+            time(*divmod(candidate_arrival, 60)),
+            time(*divmod(candidate_departure, 60)),
+        ):
+            continue
         
         # Add place to map of current place types and add budget to total budget after all checks
         category_count_map[category] = category_count_map.get(category, 0) + 1
@@ -99,6 +155,7 @@ def generate_itinerary(places: list[Place], preferences: TripPreferencesCreate, 
         raise ValueError("No suitable destinations or routes cannot be retrieved")
     
     return itinerary_stops, sum(stop["travel_minutes"] for stop in itinerary_stops)
+
 
 def test():
     load_dotenv()

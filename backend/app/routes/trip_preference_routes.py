@@ -39,6 +39,7 @@ def convert_place(place: PlaceModel) -> Place:
         category=place.category,
         rating=place.rating,
         estimated_cost=place.estimated_cost,
+        regular_opening_hours=place.regular_opening_hours,
     )
 
 
@@ -74,17 +75,36 @@ def generate_itinerary(
         api_key,
     )
 
+    if not places:
+        raise HTTPException(
+            status_code=404,
+            detail="No suitable destinations found",
+        )
+
+
     ranked_places = recommend_places(
         places,
         trip_preferences,
     )
 
-    planned_stops, total_travel_minutes = generate_plan(
-        ranked_places,
-        trip_preferences,
-        origin,
-        api_key,
-    )
+    if not ranked_places:
+        raise HTTPException(
+            status_code=404,
+            detail="No suitable destinations found",
+        )
+
+    try:
+        planned_stops, total_travel_minutes = generate_plan(
+            ranked_places,
+            trip_preferences,
+            origin,
+            api_key,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        ) from e
 
     if not places:
         raise HTTPException(
@@ -160,10 +180,14 @@ def generate_itinerary(
                     category=place.category,
                     rating=place.rating,
                     estimated_cost=place.estimated_cost,
+                    regular_opening_hours=place.regular_opening_hours,
                 )
 
                 db.add(saved_place)
                 db.flush()
+            else:
+                if place.regular_opening_hours is not None:
+                    saved_place.regular_opening_hours = place.regular_opening_hours
 
             stop = ItineraryStopModel(
                 trip_id=trip.id,
@@ -210,9 +234,6 @@ def generate_itinerary(
             detail="Unable to save itinerary"
         ) from e
 
-    total_travel_minutes = (
-        (len(response_stops) - 1) * 15
-    )
 
     return ItineraryResponse(
         trip_id=trip.id,
@@ -310,9 +331,22 @@ def get_itinerary(
             )
         )
 
-    total_travel_minutes = (
-        max(len(stops) - 1, 0) * 15
+        
+    total_travel_minutes = int(
+        (
+            datetime.combine(trip.trip_date, stops[0].arrival_time)
+            - datetime.combine(trip.trip_date, trip.start_time)
+        ).total_seconds() / 60
     )
+
+    for previous, current in zip(stops, stops[1:]):
+        total_travel_minutes += int(
+            (
+                datetime.combine(trip.trip_date, current.arrival_time)
+                - datetime.combine(trip.trip_date, previous.departure_time)
+            ).total_seconds() / 60
+        )
+
 
     return ItineraryResponse(
         trip_id=trip.id,

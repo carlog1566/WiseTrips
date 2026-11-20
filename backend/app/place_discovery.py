@@ -187,6 +187,7 @@ def discover_places(preferences: TripPreferencesCreate, origin: Place, api_key: 
                 category=category,
                 rating=place.get("rating"),
                 estimated_cost=_estimated_cost(place.get("priceLevel")),
+                regular_opening_hours=place.get("regularOpeningHours"),
             )
 
             places.append(place_to_store)
